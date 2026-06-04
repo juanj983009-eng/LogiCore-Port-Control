@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 🐘  DATABASE: POSTGRESQL (YARD & AUDIT LOGS)
+  # =========================================================================
+  yard-db:
+    image: postgres:16-alpine
+    container_name: yard-postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - yard_postgres_data:/var/lib/postgresql/data
+      - ./db-init/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - logicore-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # =========================================================================
+  # 💾  DATABASE: MS SQL SERVER (DISPATCH COLA FIFO)
+  # =========================================================================
+  dispatch-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dispatch-sqlserver-db
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_SQLSERVER_SA_PASSWORD}
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - dispatch_sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S 127.0.0.1 -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\""]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+    networks:
+      - logicore-net
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+
+  # =========================================================================
+  # 🛠️  DATABASE RUNTIME SETUP: SQL SERVER SIDE-CAR DATABASE INITIATION
+  # =========================================================================
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dispatch-sqlserver-init
+    depends_on:
+      dispatch-db:
+        condition: service_healthy
+    entrypoint: >
+      /bin/bash -c "
+      /opt/mssql-tools18/bin/sqlcmd -S dispatch-db -U sa -P '${DB_SQLSERVER_SA_PASSWORD}' -C -Q \"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'${DB_SQLSERVER_DB}') CREATE DATABASE ${DB_SQLSERVER_DB}\"
+      "
+    networks:
+      - logicore-net
+
+  # =========================================================================
+  # 📝  MICROSERVICE: AUDIT HISTORY (PUERTO 8083)
+  # =========================================================================
+  audit-service:
+    container_name: audit-history-service
+    build:
+      context: "./audit-history-service/audit-history-service"
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://yard-db:5432/${DB_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${DB_POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    depends_on:
+      yard-db:
+        condition: service_healthy
+    networks:
+      - logicore-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # =========================================================================
+  # 🏗️  MICROSERVICE: INBOUND YARD (PUERTO 8081)
+  # =========================================================================
+  yard-service:
+    container_name: inbound-yard-service
+    build:
+      context: "./inbound-yard-service/inbound-yard-service"
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://yard-db:5432/${DB_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${DB_POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      APP_SERVICES_AUDIT_URL: http://audit-service:8083/api/v1/audit/logs
+    depends_on:
+      yard-db:
+        condition: service_healthy
+    networks:
+      - logicore-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # =========================================================================
+  # 🚚  MICROSERVICE: DISPATCH QUEUE (PUERTO 8082)
+  # =========================================================================
+  dispatch-service:
+    container_name: dispatch-queue-service
+    build:
+      context: "./dispatch-queue-service/dispatch-queue-service"
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://dispatch-db:1433;databaseName=${DB_SQLSERVER_DB};encrypt=true;trustServerCertificate=true;authenticationMethod=SqlPassword;
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ${DB_SQLSERVER_SA_PASSWORD}
+      APP_SERVICES_AUDIT_URL: http://audit-service:8083/api/v1/audit/logs
+    depends_on:
+      dispatch-db:
+        condition: service_healthy
+      sqlserver-init:
+        condition: service_completed_successfully
+    networks:
+      - logicore-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+# =========================================================================
+# 🌐  NETWORKS & PERSISTENCE VOLUMES
+# =========================================================================
+networks:
+  logicore-net:
+    name: logicore-net
+    driver: bridge
+
+volumes:
+  yard_postgres_data:
+    name: yard_postgres_data
+  dispatch_sqlserver_data:
+    name: dispatch_sqlserver_data

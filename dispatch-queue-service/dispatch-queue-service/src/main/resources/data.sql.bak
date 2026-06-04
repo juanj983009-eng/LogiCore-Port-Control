@@ -1,0 +1,5 @@
+INSERT INTO despachos (placa, conductor, tipo_carga, orden_prioridad) VALUES ('A0F-001', 'Conductor Logan 1', 'REEFER', 1);
+INSERT INTO despachos (placa, conductor, tipo_carga, orden_prioridad) VALUES ('A1F-002', 'Conductor Logan 2', 'DRY', 2);
+INSERT INTO despachos (placa, conductor, tipo_carga, orden_prioridad) VALUES ('A2F-003', 'Conductor Logan 3', 'HAZMAT', 1);
+INSERT INTO despachos (placa, conductor, tipo_carga, orden_prioridad) VALUES ('A3F-004', 'Conductor Logan 4', 'DRY', 3);
+INSERT INTO despachos (placa, conductor, tipo_carga, orden_prioridad) VALUES ('A4F-005', 'Conductor Logan 5', 'REEFER', 2);

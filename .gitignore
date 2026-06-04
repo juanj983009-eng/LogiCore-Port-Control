@@ -1,0 +1,25 @@
+# AI Tools & Automated Agents
+.github/
+
+# Security & Credentials
+.env
+.env.*
+
+# Project Packages & Archives
+Zips/
+*.zip
+*.tar.gz
+*.rar
+
+# Java Build Artifacts (Maven)
+**/target/
+*.class
+
+# IDE & Editor Specific Files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
