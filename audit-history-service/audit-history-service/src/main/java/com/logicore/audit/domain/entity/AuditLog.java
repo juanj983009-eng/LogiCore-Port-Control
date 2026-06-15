@@ -17,6 +17,9 @@ public class AuditLog {
     @Column(columnDefinition = "TEXT") // Permite almacenar JSONs o textos muy largos
     private String payload;
 
+    @Column(name = "fecha_creacion", nullable = false)
+    private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
+
     // Constructor vacío OBLIGATORIO para Spring Data JPA / Hibernate
     public AuditLog() {
     }
@@ -64,5 +67,13 @@ public class AuditLog {
 
     public void setPayload(String payload) {
         this.payload = payload;
+    }
+
+    public java.time.LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(java.time.LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
     }
 }

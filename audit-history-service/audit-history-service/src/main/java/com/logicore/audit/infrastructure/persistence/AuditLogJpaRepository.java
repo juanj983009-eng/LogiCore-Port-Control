@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AuditLogJpaRepository extends JpaRepository<AuditLog, String> {
-    // Hereda automáticamente todas las operaciones CRUD orientadas a tu PK (String
-    // idLog)
+    java.util.List<AuditLog> findAllByOrderByFechaCreacionAsc();
 }

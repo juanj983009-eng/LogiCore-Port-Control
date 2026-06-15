@@ -6,6 +6,7 @@
     <meta name="description" content="LogiCore — Panel Unificado de Control de Operaciones. Gestión de contenedores (Lista Doble), cola de despacho (FIFO), auditoría (LIFO) y alertas en tiempo real.">
     <meta name="author" content="Juan Parra">
     <meta name="theme-color" content="#0b0f19">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'%3E%3Cpath d='M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z'/%3E%3C/svg%3E">
     <title>LogiCore | Control de Operaciones</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,11 +14,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body style="background-color: transparent !important;">
 
-    <div id="splash-screen">
+    <canvas id="bg-3d-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none;"></canvas>
+
+    <div id="splash-screen" class="loading-screen-container">
         <div class="splash-content">
             <div class="splash-logo">📦 LOGICORE</div>
             <div class="splash-subtitle">Control de Operaciones Portuarias</div>
@@ -41,8 +46,8 @@
         </div>
 
         <div class="lc-header__meta" style="display: flex; align-items: center; gap: 14px;">
-            <p class="lc-header__student" style="margin: 0;">Estudiante: <span style="color: var(--text-primary); font-weight: 600;">Juan Parra</span></p>
-            <div class="lc-header__status" role="status" aria-live="polite">
+            <p class="lc-header__student user-status-label" style="margin: 0;">Estudiante: <span style="color: var(--text-primary); font-weight: 600;">Juan Parra</span></p>
+            <div class="lc-header__status system-online-badge" role="status" aria-live="polite">
                 <div class="status-dot"></div>
                 <span id="header-status">SISTEMA EN LÍNEA</span>
             </div>
@@ -56,7 +61,7 @@
     <main class="lc-main" id="main-content" role="main" style="max-width: 1680px; width: 100%; margin: 0 auto; padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 1.5rem;">
 
         <!-- ── KPI STRIP ── -->
-        <section class="kpi-grid" aria-label="Métricas globales del sistema en tiempo real" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; width: 100%;">
+        <section class="kpi-grid" aria-label="Métricas globales del sistema en tiempo real">
 
             <div class="kpi-card kpi-card--cyan">
                 <div class="kpi-card__label">
@@ -97,11 +102,13 @@
         </section>
 
         <!-- ── BLOQUES OPERATIVOS (Sección Media 50% / 50%) ── -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; width: 100%;">
+        <div class="dashboard-grid" id="main-layout">
 
-            <!-- Columna Izquierda: Patio de Contenedores -->
-            <section class="bento-card card--yard" aria-labelledby="title-yard">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <!-- Columna Izquierda: Patio de Contenedores — flujo lineal vertical -->
+            <section id="yard-control-section" class="bento-card card--yard" aria-labelledby="title-yard">
+
+                <!-- 1. Panel Header -->
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <div class="card-title" style="display: flex; align-items: center; gap: 10px;">
                         <div class="card-title__icon card-title__icon--cyan" aria-hidden="true">
                             <i class="fa-solid fa-warehouse"></i>
@@ -110,10 +117,13 @@
                             Patio de Contenedores
                         </h2>
                     </div>
-                    <span class="ds-badge ds-badge--cyan">Lista Doble</span>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span class="ds-badge ds-badge--cyan">Lista Doble</span>
+                    </div>
                 </div>
 
-                <form id="form-yard" class="lc-form" novalidate aria-label="Formulario de ingreso al patio" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- 2. Formulario de ingreso -->
+                <form id="form-yard" class="lc-form" novalidate aria-label="Formulario de ingreso al patio">
                     <div class="lc-field">
                         <label class="lc-label" for="yard-id">CÓDIGO ID</label>
                         <input type="text" id="yard-id" class="lc-input lc-input--cyan" placeholder="Ej: CONT-999" autocomplete="off" maxlength="20" required>
@@ -122,7 +132,7 @@
                         <label class="lc-label" for="yard-destino">DESTINO</label>
                         <input type="text" id="yard-destino" class="lc-input lc-input--cyan" placeholder="Ej: PUERTO_CALLAO" autocomplete="off" maxlength="40" required>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
                         <div class="lc-field">
                             <label class="lc-label" for="yard-peso">PESO (TN)</label>
                             <input type="number" id="yard-peso" class="lc-input lc-input--cyan" placeholder="24.5" step="0.1" min="0.1" max="99999" required>
@@ -137,21 +147,58 @@
                     </button>
                 </form>
 
-                <div class="section-divider" style="margin: 1.25rem 0;"></div>
-
-                <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                    <span class="list-label" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
-                        Vista Ida (Cabeza – Cola)
-                    </span>
-                    <span class="list-count list-count--cyan" id="yard-count">0</span>
-                </div>
-
-                <div class="virtual-list-wrap virtual-list-wrap--yard" id="yard-list-ida" role="list" aria-label="Lista de contenedores en patio" aria-live="polite">
-                    <div class="empty-state">
-                        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
-                        <p>Cargando patio…</p>
+                <!-- 3. Mapa de Calor del Patio -->
+                <div id="main-yard-grid">
+                    <div class="heatmap-header" style="display:flex;align-items:center;gap:6px;margin-bottom:0.625rem;">
+                        <div class="card-title__icon card-title__icon--cyan" style="width:26px;height:26px;font-size:11px;" aria-hidden="true">
+                            <i class="fa-solid fa-border-all"></i>
+                        </div>
+                        <h3 id="title-heatmap" style="font-size:0.78rem;font-weight:700;color:var(--accent-celeste);margin:0;letter-spacing:0.03em;">Mapa de Calor del Patio</h3>
+                        <span class="ds-badge ds-badge--cyan" style="margin-left:auto;">Grid Bidimensional</span>
+                    </div>
+                    <div id="yard-heatmap" class="yard-heatmap" role="grid" aria-label="Mapa bidimensional de slots del patio" aria-live="polite">
+                    </div>
+                    <div class="heatmap-stats">
+                        <span id="hm-occupied-label" class="hm-stat hm-stat--occupied">
+                            <i class="fa-solid fa-square-full" aria-hidden="true"></i>
+                            <span id="hm-occupied">0</span> ocupados
+                        </span>
+                        <span id="hm-free-label" class="hm-stat hm-stat--free">
+                            <i class="fa-regular fa-square" aria-hidden="true"></i>
+                            <span id="hm-free">0</span> libres
+                        </span>
+                        <span class="hm-stat" style="color:var(--text-muted)">
+                            Capacidad: <span id="hm-capacity">—</span> slots
+                        </span>
                     </div>
                 </div>
+
+                <!-- 4. Sección B — Lista Enlazada Doble -->
+                <div id="double-list-section" class="bento-card" style="background-color: #FFFFFF; border: 1px solid #94A3B8; border-radius: 16px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: #0F172A; font-size: 16px; font-weight: 700; margin: 0;">SECCIÓN B — LISTA ENLAZADA DOBLE</h3>
+                        <div class="list-direction-toggle">
+                            <button id="btn-list-ida" class="active" style="background-color: #0F172A; color: #FFFFFF; border: 1px solid #0F172A; padding: 6px 16px; border-radius: 6px 0 0 6px; font-weight: 700; cursor: pointer;">&gt; IDA</button>
+                            <button id="btn-list-vuelta" style="background-color: #FFFFFF; color: #475569; border: 1px solid #E2E8F0; padding: 6px 16px; border-radius: 0 6px 6px 0; font-weight: 700; cursor: pointer;">&#60; VUELTA</button>
+                        </div>
+                    </div>
+                    <h4 id="list-view-title" style="color: #0F172A; font-size: 20px; font-weight: 700; margin: 0 0 15px 0;">VISTA IDA (CABEZA &rarr; COLA)</h4>
+
+                    <div id="linked-list-nodes-container" style="display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-bottom: 10px; width: 100%;">
+                        <div id="yard-list-ida" class="virtual-list-wrap virtual-list-wrap--yard" style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+                                <p>Cargando patio…</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="list-metadata-footer" style="color: #475569; font-size: 14px; margin-top: 15px;">
+                        <span id="yard-count" style="display: none;">0</span>
+                        <span id="node-count">0 nodos</span> &middot; Doble enlace bidireccional &middot; Recorrido <span id="route-type">CABEZA &rarr; COLA</span>
+                    </div>
+                </div>
+
             </section>
 
             <!-- Columna Derecha: Cola de Despacho -->
@@ -249,48 +296,8 @@
 
         </div>
 
-        <!-- ── MONITOREO Y ANALÍTICAS (Sección Inferior) ── -->
-        <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; width: 100%;">
-
-            <!-- Izquierda: Mapa de Calor del Patio -->
-            <section class="bento-card card--heatmap" aria-labelledby="title-heatmap">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                    <div class="card-title" style="display: flex; align-items: center; gap: 10px;">
-                        <div class="card-title__icon card-title__icon--cyan" aria-hidden="true">
-                            <i class="fa-solid fa-border-all"></i>
-                        </div>
-                        <h2 id="title-heatmap" class="card-title__text--cyan" style="font-size: 1.2rem; font-weight: 700; margin: 0;">
-                            Mapa de Calor del Patio
-                        </h2>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <span class="ds-badge ds-badge--cyan">Grid Bidimensional</span>
-                        <span class="heatmap-legend">
-                            <span class="hm-dot hm-dot--occupied"></span> Ocupado
-                            <span class="hm-dot hm-dot--empty" style="margin-left:8px"></span> Libre
-                        </span>
-                    </div>
-                </div>
-
-                <div id="yard-heatmap" class="yard-heatmap" role="grid" aria-label="Mapa bidimensional de slots del patio" aria-live="polite">
-                </div>
-
-                <div class="heatmap-stats">
-                    <span id="hm-occupied-label" class="hm-stat hm-stat--occupied">
-                        <i class="fa-solid fa-square-full" aria-hidden="true"></i>
-                        <span id="hm-occupied">0</span> ocupados
-                    </span>
-                    <span id="hm-free-label" class="hm-stat hm-stat--free">
-                        <i class="fa-regular fa-square" aria-hidden="true"></i>
-                        <span id="hm-free">0</span> libres
-                    </span>
-                    <span class="hm-stat" style="color:var(--text-muted)">
-                        Capacidad: <span id="hm-capacity">—</span> slots
-                    </span>
-                </div>
-            </section>
-
-            <!-- Derecha: Alertas del Sistema -->
+        <!-- ── MONITOREO: Alertas del Sistema ── -->
+        <div style="width: 100%;">
             <section class="bento-card card--alerts" style="display: flex; flex-direction: column;" aria-labelledby="title-alerts">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
                     <div class="card-title" style="display: flex; align-items: center; gap: 10px;">
@@ -430,19 +437,28 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container" aria-live="assertive" aria-atomic="false"></div>
 
+    <script src="validation.js"></script>
+    <script src="infrastructure/api/ApiClient.js"></script>
+    <script src="presentation/components/YardHeatmap.js"></script>
+    <script src="presentation/components/DoubleLinkedListComponent.js"></script>
+    <script src="presentation/controllers/DashboardController.js"></script>
+    <script src="infrastructure/api/Background3D.js"></script>
     <script src="app.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const status = document.getElementById('splash-status');
             const splash = document.getElementById('splash-screen');
             
-            setTimeout(() => { status.innerText = "Conectando con Yard Service [Port 8081]..."; }, 500);
-            setTimeout(() => { status.innerText = "Sincronizando Cola de Despacho [Port 8082]..."; }, 1000);
-            setTimeout(() => { status.innerText = "Sistema En Línea."; }, 1500);
+            setTimeout(() => { status.innerText = "Conectando con Yard Service [Port 8081]..."; }, 100);
+            setTimeout(() => { status.innerText = "Sincronizando Cola de Despacho [Port 8082]..."; }, 200);
+            setTimeout(() => { status.innerText = "Sistema En Línea."; }, 300);
             
             setTimeout(() => {
-                splash.classList.add('splash-hidden');
-            }, 1800);
+                if (splash) {
+                    splash.classList.add('splash-hidden');
+                    splash.classList.add('hidden');
+                }
+            }, 400);
         });
     </script>
 

@@ -6,6 +6,8 @@
 //     Toda la lógica de negocio previa se mantiene intacta.
 // =========================================================================
 
+window.LOGICORE_CONFIG = { USE_V2_ARCHITECTURE: true, API_BASE_URL: 'http://127.0.0.1:8080' };
+
 /* ── ENDPOINTS ── */
 const API_DISPATCH = "http://127.0.0.1:8082/api/v1/dispatch/trucks";
 const API_AUDIT    = "http://127.0.0.1:8083/api/v1/audit/logs";
@@ -34,80 +36,104 @@ let dispatchChart = null;
 document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
-        deshacerUltimaAccion();
+        if (window.LOGICORE_CONFIG.USE_V2_ARCHITECTURE) {
+            DashboardController.reloadData();
+        } else {
+            deshacerUltimaAccion();
+        }
     }
 });
 
 // =========================================================================
 // 🚀  INICIALIZACIÓN
 // =========================================================================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
-    // 1️⃣  Inicializar Chart.js (singleton, antes de datos)
-    inicializarGrafico();
+    if (window.LOGICORE_CONFIG.USE_V2_ARCHITECTURE) {
+        // 1️⃣  Inicializar Chart.js (singleton, antes de datos)
+        inicializarGrafico();
+        
+        // 2️⃣  Inicializar el nuevo controlador de la arquitectura modular v2
+        await DashboardController.init();
 
-    // 2️⃣  Pintar el heatmap con slots vacíos INMEDIATAMENTE
-    //     para que el componente nunca aparezca en blanco
-    renderizarHeatmap();
-
-    // 3️⃣  Cargas iniciales en paralelo (incluye el Patio)
-    Promise.all([
-        cargarPatioContenedores(),   // carga lista doble + actualiza heatmap
-        cargarColaDespacho(),
-        cargarHistorialAuditoria()
-    ]);
-
-    // ── LISTENERS DE FORMULARIOS Y BOTONES ──
-
-    const formYard = document.getElementById("form-yard");
-    if (formYard) formYard.addEventListener("submit", ingresarAlPatio);
-
-    const formDispatch = document.getElementById("form-dispatch");
-    if (formDispatch) formDispatch.addEventListener("submit", encolarCamion);
-
-    const btnDispatchNext = document.getElementById("btn-dispatch-next");
-    if (btnDispatchNext) btnDispatchNext.addEventListener("click", despacharSiguienteCamion);
-
-    const btnAuditUndo = document.getElementById("btn-audit-undo");
-    if (btnAuditUndo) btnAuditUndo.addEventListener("click", deshacerUltimaAccion);
-
-    const btnClearAlerts = document.getElementById("btn-clear-alerts");
-    if (btnClearAlerts) btnClearAlerts.addEventListener("click", limpiarAlertas);
-
-    // ── PAGINACIÓN — Despacho ──
-    document.getElementById("dispatch-prev")?.addEventListener("click", () => {
-        if (state.dispatch.page > 0) {
-            state.dispatch.page--;
-            renderizarColaDespacho();
+        // 3️⃣  Inicializar el fondo 3D pasivo
+        if (window.Background3D) {
+            window.Background3D.init();
         }
-    });
-    document.getElementById("dispatch-next-page")?.addEventListener("click", () => {
-        const maxPage = Math.ceil(state.dispatch.data.length / PAGE_SIZE_DISPATCH) - 1;
-        if (state.dispatch.page < maxPage) {
-            state.dispatch.page++;
-            renderizarColaDespacho();
-        }
-    });
+    } else {
+        // 1️⃣  Inicializar Chart.js (singleton, antes de datos)
+        inicializarGrafico();
 
-    // ── PAGINACIÓN — Auditoría ──
-    document.getElementById("audit-prev")?.addEventListener("click", () => {
-        if (state.audit.page > 0) {
-            state.audit.page--;
-            renderizarAuditoria();
-        }
-    });
-    document.getElementById("audit-next-page")?.addEventListener("click", () => {
-        const maxPage = Math.ceil(state.audit.data.length / PAGE_SIZE_AUDIT) - 1;
-        if (state.audit.page < maxPage) {
-            state.audit.page++;
-            renderizarAuditoria();
-        }
-    });
+        // 2️⃣  Pintar el heatmap con slots vacíos INMEDIATAMENTE
+        //     para que el componente nunca aparezca en blanco
+        renderizarHeatmap();
 
-    // Ripple en todos los botones
-    document.querySelectorAll(".lc-btn").forEach(btn => {
-        btn.addEventListener("click", createRipple);
-    });
+        // 3️⃣  Cargas iniciales en paralelo (incluye el Patio)
+        await Promise.all([
+            cargarPatioContenedores(),   // carga lista doble + actualiza heatmap
+            cargarColaDespacho(),
+            cargarHistorialAuditoria()
+        ]);
+
+        // Hide loading screen immediately after Promise.all resolves in V1 mode
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.classList.add('hidden');
+            splash.classList.add('splash-hidden');
+        }
+
+        // ── LISTENERS DE FORMULARIOS Y BOTONES ──
+
+        const formYard = document.getElementById("form-yard");
+        if (formYard) formYard.addEventListener("submit", ingresarAlPatio);
+
+        const formDispatch = document.getElementById("form-dispatch");
+        if (formDispatch) formDispatch.addEventListener("submit", encolarCamion);
+
+        const btnDispatchNext = document.getElementById("btn-dispatch-next");
+        if (btnDispatchNext) btnDispatchNext.addEventListener("click", despacharSiguienteCamion);
+
+        const btnAuditUndo = document.getElementById("btn-audit-undo");
+        if (btnAuditUndo) btnAuditUndo.addEventListener("click", deshacerUltimaAccion);
+
+        const btnClearAlerts = document.getElementById("btn-clear-alerts");
+        if (btnClearAlerts) btnClearAlerts.addEventListener("click", limpiarAlertas);
+
+        // ── PAGINACIÓN — Despacho ──
+        document.getElementById("dispatch-prev")?.addEventListener("click", () => {
+            if (state.dispatch.page > 0) {
+                state.dispatch.page--;
+                renderizarColaDespacho();
+            }
+        });
+        document.getElementById("dispatch-next-page")?.addEventListener("click", () => {
+            const maxPage = Math.ceil(state.dispatch.data.length / PAGE_SIZE_DISPATCH) - 1;
+            if (state.dispatch.page < maxPage) {
+                state.dispatch.page++;
+                renderizarColaDespacho();
+            }
+        });
+
+        // ── PAGINACIÓN — Auditoría ──
+        document.getElementById("audit-prev")?.addEventListener("click", () => {
+            if (state.audit.page > 0) {
+                state.audit.page--;
+                renderizarAuditoria();
+            }
+        });
+        document.getElementById("audit-next-page")?.addEventListener("click", () => {
+            const maxPage = Math.ceil(state.audit.data.length / PAGE_SIZE_AUDIT) - 1;
+            if (state.audit.page < maxPage) {
+                state.audit.page++;
+                renderizarAuditoria();
+            }
+        });
+
+        // Ripple en todos los botones
+        document.querySelectorAll(".lc-btn").forEach(btn => {
+            btn.addEventListener("click", createRipple);
+        });
+    }
 });
 
 // =========================================================================
@@ -223,11 +249,7 @@ async function ingresarAlPatio(e) {
     };
 
     try {
-        const respuesta = await fetch(API_YARD, {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify(contenedorDTO)
-        });
+        const respuesta = await ApiClient.postContainer(contenedorDTO);
 
         if (respuesta.ok) {
             document.getElementById("form-yard").reset();
@@ -240,7 +262,11 @@ async function ingresarAlPatio(e) {
         }
     } catch (error) {
         console.error("Error POST Yard:", error);
-        showToast("error", "Sin Conexión", "No se pudo contactar al servicio de Patio (puerto 8082).");
+        if (error.message.includes("[Compilation Block Alert]")) {
+            showToast("error", "Error de Validación", error.message);
+        } else {
+            showToast("error", "Sin Conexión", "No se pudo contactar al servicio de Patio.");
+        }
     } finally {
         setLoadingState(btn, false);
     }
@@ -251,12 +277,11 @@ async function cargarPatioContenedores() {
     if (!contenedorList) return;
 
     try {
-        const respuesta = await fetch(`${API_YARD}/view`);
-        if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
-        state.yard.data = await respuesta.json();
+        state.yard.data = await ApiClient.getYardContainers("view");
         renderizarPatio();
         renderizarHeatmap();           // 🔥 Actualizar mapa de calor
-    } catch {
+    } catch (error) {
+        console.error("Error GET Yard:", error);
         state.yard.data = [];
         contenedorList.innerHTML = crearEmptyState("fa-warehouse", "Patio listo · Lista Doble en espera");
         renderizarHeatmap();
@@ -401,11 +426,7 @@ async function encolarCamion(e) {
     };
 
     try {
-        const respuesta = await fetch(API_DISPATCH, {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify(camionDTO)
-        });
+        const respuesta = await ApiClient.registrarCamionEnCola(camionDTO);
 
         if (respuesta.ok) {
             document.getElementById("form-dispatch").reset();
@@ -425,7 +446,11 @@ async function encolarCamion(e) {
         }
     } catch (error) {
         console.error(error);
-        showToast("error", "Sin Conexión", "No se pudo contactar al servicio de Despacho (puerto 8082).");
+        if (error.message.includes("[Compilation Block Alert]")) {
+            showToast("error", "Error de Validación", error.message);
+        } else {
+            showToast("error", "Sin Conexión", "No se pudo contactar al servicio de Despacho.");
+        }
     } finally {
         setLoadingState(btn, false);
     }
@@ -436,7 +461,7 @@ async function despacharSiguienteCamion() {
     setLoadingState(btn, true);
 
     try {
-        const respuesta = await fetch(`${API_DISPATCH}/next`, { method: "DELETE" });
+        const respuesta = await ApiClient.deleteNextTruck();
 
         if (respuesta.status === 404) {
             showToast("warning", "Cola Vacía", "No existen camiones en la cola de espera.");
@@ -465,9 +490,7 @@ async function despacharSiguienteCamion() {
 
 async function cargarColaDespacho() {
     try {
-        const respuesta = await fetch(`${API_DISPATCH}/view`);
-        if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
-        state.dispatch.data = await respuesta.json();
+        state.dispatch.data = await ApiClient.getDispatchTrucks();
         renderizarColaDespacho();
         actualizarGrafico();          // 📊 Refrescar el gráfico
     } catch (error) {
@@ -594,11 +617,11 @@ function inicializarGrafico() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: "rgba(5,8,17,0.97)",
-                    titleColor:      "#f1f5f9",
-                    bodyColor:       "#94a3b8",
-                    borderColor:     "rgba(255,255,255,0.10)",
-                    borderWidth:     1,
+                    backgroundColor: '#FFFFFF',
+                    titleColor: '#0F172A',
+                    bodyColor: '#475569',
+                    borderColor: '#475569',
+                    borderWidth: 1,
                     padding:         10,
                     cornerRadius:    8,
                     callbacks: {
@@ -755,9 +778,7 @@ function limpiarAlertas() {
 
 async function cargarHistorialAuditoria() {
     try {
-        const respuesta = await fetch(API_AUDIT);
-        if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
-        state.audit.data = await respuesta.json();
+        state.audit.data = await ApiClient.getAuditLogs();
         renderizarAuditoria();
     } catch (error) {
         console.error(error);
@@ -833,7 +854,7 @@ async function deshacerUltimaAccion() {
     setLoadingState(btn, true);
 
     try {
-        const respuesta = await fetch(`${API_AUDIT}/undo`, { method: "POST" });
+        const respuesta = await ApiClient.postUndo();
 
         if (respuesta.status === 404) {
             showToast("warning", "Pila Vacía", "No quedan más acciones por revertir en la Pila LIFO.");

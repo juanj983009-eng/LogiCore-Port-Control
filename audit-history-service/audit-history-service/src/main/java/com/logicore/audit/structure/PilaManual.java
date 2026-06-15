@@ -38,4 +38,19 @@ public class PilaManual<T> {
     public boolean estaVacia() {
         return tope == null;
     }
+
+    public java.util.List<T> toElementList() {
+        java.util.List<T> lista = new java.util.ArrayList<>();
+        NodoPila<T> actual = tope;
+        while (actual != null) {
+            lista.add(actual.getDato());
+            actual = actual.getSiguiente();
+        }
+        return lista;
+    }
+
+    public void clear() {
+        this.tope = null;
+        this.tamaño = 0;
+    }
 }
