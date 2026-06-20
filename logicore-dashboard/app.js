@@ -8,29 +8,45 @@
 
 window.LOGICORE_CONFIG = { USE_V2_ARCHITECTURE: true, API_BASE_URL: 'http://127.0.0.1:8080' };
 
-/* ── ENDPOINTS ── */
-const API_DISPATCH = "http://127.0.0.1:8082/api/v1/dispatch/trucks";
-const API_AUDIT    = "http://127.0.0.1:8083/api/v1/audit/logs";
-const API_YARD     = "http://127.0.0.1:8081/api/v1/yard/containers";
-
 
 /* ── CONFIGURACIÓN DE PAGINACIÓN ── */
 const PAGE_SIZE_DISPATCH = 20;
 const PAGE_SIZE_AUDIT    = 15;
 
 /* ── CONFIGURACIÓN DEL MAPA DE CALOR ── */
-const HEATMAP_TOTAL_SLOTS = 50;   // capacidad visual fija del patio (5×10)
+const HEATMAP_TOTAL_SLOTS = 30;   // capacidad visual fija del patio (5×6)
 
 /* ── ESTADO CENTRALIZADO ── */
-const state = {
-    dispatch: { data: [], page: 0 },
-    audit:    { data: [], page: 0 },
-    yard:     { data: [] },
-    alerts:   []                    // feed de alertas locales
-};
+// El estado se obtiene y maneja centralizadamente a través del Store reactivo.
+const state = Store.state;
 
 /* ── INSTANCIA CHART.JS (singleton) ── */
 let dispatchChart = null;
+
+/* ── MOCK TIMESTAMP STABILIZERS ── */
+function getMockEnqueuedTime(placa) {
+    const safePlaca = placa || "";
+    let hash = 0;
+    for (let i = 0; i < safePlaca.length; i++) {
+        hash = safePlaca.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const totalMinutes = Math.abs(hash) % 180; // up to 3 hours ago
+    const now = new Date();
+    const enqueuedDate = new Date(now.getTime() - totalMinutes * 60000);
+    return enqueuedDate.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
+}
+
+function getMockAuditTime(idLog) {
+    const safeIdLog = idLog || "";
+    let hash = 0;
+    for (let i = 0; i < safeIdLog.length; i++) {
+        hash = safeIdLog.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const totalMinutes = Math.abs(hash) % 120; // up to 2 hours ago
+    const now = new Date();
+    const auditDate = new Date(now.getTime() - totalMinutes * 60000);
+    return auditDate.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
+}
 
 /* ── KEYBOARD SHORTCUT Ctrl+Z ── */
 document.addEventListener("keydown", (e) => {
@@ -47,7 +63,7 @@ document.addEventListener("keydown", (e) => {
 // =========================================================================
 // 🚀  INICIALIZACIÓN
 // =========================================================================
-document.addEventListener("DOMContentLoaded", async () => {
+(async () => {
 
     if (window.LOGICORE_CONFIG.USE_V2_ARCHITECTURE) {
         // 1️⃣  Inicializar Chart.js (singleton, antes de datos)
@@ -69,26 +85,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderizarHeatmap();
 
         // 3️⃣  Cargas iniciales en paralelo (incluye el Patio)
-        await Promise.all([
-            cargarPatioContenedores(),   // carga lista doble + actualiza heatmap
-            cargarColaDespacho(),
-            cargarHistorialAuditoria()
-        ]);
-
-        // Hide loading screen immediately after Promise.all resolves in V1 mode
-        const splash = document.getElementById('splash-screen');
-        if (splash) {
-            splash.classList.add('hidden');
-            splash.classList.add('splash-hidden');
+        try {
+            await Promise.allSettled([
+                cargarPatioContenedores(),   // carga lista doble + actualiza heatmap
+                cargarColaDespacho(),
+                cargarHistorialAuditoria()
+            ]);
+        } catch (error) {
+            console.error("Falla parcial al inicializar servicios:", error);
         }
 
         // ── LISTENERS DE FORMULARIOS Y BOTONES ──
 
         const formYard = document.getElementById("form-yard");
-        if (formYard) formYard.addEventListener("submit", ingresarAlPatio);
+        if (formYard) {
+            formYard.addEventListener("submit", function(e) {
+                e.preventDefault();
+                ingresarAlPatio(e);
+            });
+        }
 
         const formDispatch = document.getElementById("form-dispatch");
-        if (formDispatch) formDispatch.addEventListener("submit", encolarCamion);
+        if (formDispatch) {
+            formDispatch.addEventListener("submit", function(e) {
+                e.preventDefault();
+                encolarCamion(e);
+            });
+        }
 
         const btnDispatchNext = document.getElementById("btn-dispatch-next");
         if (btnDispatchNext) btnDispatchNext.addEventListener("click", despacharSiguienteCamion);
@@ -134,7 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.addEventListener("click", createRipple);
         });
     }
-});
+})();
 
 // =========================================================================
 // 💧  RIPPLE EFFECT
@@ -170,7 +193,8 @@ function showToast(type = "info", title = "", message = "", duration = 4000) {
     };
 
     const toast = document.createElement("div");
-    toast.className = `toast toast--${type}`;
+    const shakeClass = (type === "error" || type === "warning") ? " animate__animated animate__shakeX" : "";
+    toast.className = `toast toast--${type}${shakeClass}`;
     toast.setAttribute("role", "alert");
     toast.innerHTML = `
         <div class="toast__icon"><i class="fa-solid ${icons[type]}"></i></div>
@@ -249,11 +273,53 @@ async function ingresarAlPatio(e) {
     };
 
     try {
-        const respuesta = await ApiClient.postContainer(contenedorDTO);
+        const respuesta = await YardService.ingresarAlPatio(contenedorDTO);
 
         if (respuesta.ok) {
             document.getElementById("form-yard").reset();
-            await Promise.all([cargarPatioContenedores(), cargarHistorialAuditoria()]);
+            
+            // 1. Inyección reactiva inmediata en el DOM (local)
+            state.yard.data.push(contenedorDTO);
+            
+            const idx = state.yard.data.length - 1;
+            const rowChar = ["A", "B", "C", "D", "E"][Math.floor(idx / 6)] || "A";
+            const colNum = (idx % 6) + 1;
+            const bayCode = rowChar + colNum;
+            const detalleText = `Bahía ${bayCode} — ${contenedorDTO.destino || 'APM Terminals'}`;
+            
+            const enrichedLog = {
+                accion: "INGRESO",
+                lote: contenedorDTO.codigoId,
+                detalle: detalleText,
+                hora: obtenerHoraPeruana()
+            };
+            if (window.pilaAuditoria && window.pilaAuditoria.push) {
+                window.pilaAuditoria.push(enrichedLog);
+            }
+
+            const mockLog = {
+                idLog: "mock-" + Date.now(),
+                tipoAccion: "INGRESAR CONTENEDOR",
+                microservicio: "inbound-yard-service",
+                payload: JSON.stringify(contenedorDTO),
+                fechaRegistro: new Date().toISOString()
+            };
+            state.audit.data.unshift(mockLog);
+
+            renderizarPatio();
+            renderizarHeatmap();
+            if (window.DoubleLinkedListComponent) {
+                window.DoubleLinkedListComponent.render(state.yard.data);
+            }
+            if (window.inyectarFilaAuditoriaInmediata) {
+                window.inyectarFilaAuditoriaInmediata(mockLog);
+            }
+            actualizarKPIs();
+
+            // 2. Sincronización silenciosa de fondo
+            cargarPatioContenedores(true);
+            cargarHistorialAuditoria(true);
+
             showToast("success", "Contenedor Ingresado",
                 `${contenedorDTO.codigoId} → ${contenedorDTO.destino}`);
         } else {
@@ -272,17 +338,16 @@ async function ingresarAlPatio(e) {
     }
 }
 
-async function cargarPatioContenedores() {
+async function cargarPatioContenedores(silent = false) {
     const contenedorList = document.getElementById("yard-list-ida");
     if (!contenedorList) return;
 
     try {
-        state.yard.data = await ApiClient.getYardContainers("view");
-        renderizarPatio();
-        renderizarHeatmap();           // 🔥 Actualizar mapa de calor
+        const containers = await YardService.obtenerEstadoPatio();
+        Store.updateYard(containers);
     } catch (error) {
         console.error("Error GET Yard:", error);
-        state.yard.data = [];
+        Store.updateYard([]);
         contenedorList.innerHTML = crearEmptyState("fa-warehouse", "Patio listo · Lista Doble en espera");
         renderizarHeatmap();
         actualizarKPIs();
@@ -294,7 +359,8 @@ function renderizarPatio() {
     const contenedorList = document.getElementById("yard-list-ida");
     if (!contenedorList) return;
 
-    document.getElementById("yard-count").textContent = contenedores.length;
+    const yardCountEl = document.getElementById("yard-count");
+    if (yardCountEl) yardCountEl.textContent = contenedores.length;
 
     if (contenedores.length === 0) {
         contenedorList.innerHTML = crearEmptyState("fa-boxes-stacked", "Patio vacío. Sin contenedores asignados.");
@@ -348,65 +414,9 @@ function renderizarPatio() {
 function renderizarHeatmap() {
     const grid = document.getElementById("yard-heatmap");
     if (!grid) return;
-
-    const contenedores = state.yard.data;          // puede ser [] en carga inicial
-    const ocupados     = contenedores.length;
-
-    // La capacidad visual es siempre el máximo entre el fijo y los datos reales
-    // Nunca cae por debajo de HEATMAP_TOTAL_SLOTS → el grid nunca queda vacío
-    const totalSlots = Math.max(HEATMAP_TOTAL_SLOTS, ocupados);
-
-    // Actualizar estadísticas del panel
-    const hmOccupied = document.getElementById("hm-occupied");
-    const hmFree     = document.getElementById("hm-free");
-    const hmCapacity = document.getElementById("hm-capacity");
-    if (hmOccupied) hmOccupied.textContent = ocupados;
-    if (hmFree)     hmFree.textContent     = Math.max(0, totalSlots - ocupados);
-    if (hmCapacity) hmCapacity.textContent = totalSlots;
-
-    const fragment = document.createDocumentFragment();
-
-    for (let i = 0; i < totalSlots; i++) {
-        const isOcupad = i < ocupados;
-        const c        = contenedores[i];   // undefined cuando slot vacío
-
-        const slot = document.createElement("div");
-        slot.className = "hm-slot " + (isOcupad ? "hm-slot--occupied" : "hm-slot--empty");
-        slot.setAttribute("role", "gridcell");
-        slot.setAttribute("aria-label",
-            isOcupad
-                ? `Slot ${i + 1}: ${c.codigoId} → ${c.destino}`
-                : `Slot ${i + 1}: libre`
-        );
-
-        // Tooltip CSS puro — solo slots con contenedor
-        // CSS usa white-space:pre, así que \n genera salto de línea real
-        if (isOcupad) {
-            slot.setAttribute('data-tooltip', `ID: ${c.codigoId}\n📍 Destino: ${c.destino}\n⚖️ Peso: ${(+c.peso).toFixed(1)} Tn\n⚡ Prioridad: ${c.prioridad}`);
-            slot.classList.add("has-tooltip");
-        }
-
-        // Número de slot (siempre visible, esquina inferior derecha)
-        const numEl = document.createElement("span");
-        numEl.className   = "hm-slot__num";
-        numEl.textContent = i + 1;
-        numEl.setAttribute("aria-hidden", "true");
-        slot.appendChild(numEl);
-
-        // Ícono de caja solo en slots ocupados
-        if (isOcupad) {
-            const iconEl = document.createElement("i");
-            iconEl.className = "fa-solid fa-box hm-slot__icon";
-            iconEl.setAttribute("aria-hidden", "true");
-            slot.appendChild(iconEl);
-        }
-
-        fragment.appendChild(slot);
+    if (window.YardHeatmap) {
+        window.YardHeatmap.render(grid, state.yard.data);
     }
-
-    // Reemplazar contenido en un solo batch DOM
-    grid.innerHTML = "";
-    grid.appendChild(fragment);
 }
 
 // =========================================================================
@@ -415,23 +425,72 @@ function renderizarHeatmap() {
 
 async function encolarCamion(e) {
     e.preventDefault();
+
+    const placaVal = document.getElementById("dispatch-placa").value.trim();
+    const conductorVal = document.getElementById("dispatch-conductor").value.trim();
+    const tipoCargaVal = document.getElementById("dispatch-carga").value;
+    const prioridadVal = document.getElementById("dispatch-prioridad").value;
+
+    if (!placaVal || !conductorVal || tipoCargaVal === "" || prioridadVal === "") {
+        showToast("error", "Campos Incompletos", "Error: Todos los campos del camión son obligatorios.");
+        return;
+    }
+
+    // RegEx para placa peruana: 3 alfanuméricos, guion opcional, 3 números (ej: ABC-123 o A1F-942)
+    const regexPlaca = /^[A-Z0-9]{3}-?\d{3}$/i;
+    if (!regexPlaca.test(placaVal)) {
+        showToast("error", "Formato de Placa Inválido", "La placa debe tener 3 caracteres alfanuméricos, un guion opcional y 3 números (ej: ABC-123 o A1F-942).");
+        return;
+    }
+
     const btn = document.getElementById("btn-enqueue");
     setLoadingState(btn, true);
 
     const camionDTO = {
-        placa:          document.getElementById("dispatch-placa").value.trim().toUpperCase(),
-        conductor:      document.getElementById("dispatch-conductor").value.trim(),
-        tipoCarga:      document.getElementById("dispatch-carga").value.trim().toUpperCase(),
-        ordenPrioridad: parseInt(document.getElementById("dispatch-prioridad").value) || 1
+        placa:          placaVal.toUpperCase(),
+        conductor:      conductorVal,
+        tipoCarga:      tipoCargaVal.toUpperCase(),
+        ordenPrioridad: parseInt(prioridadVal) || 1
     };
 
     try {
-        const respuesta = await ApiClient.registrarCamionEnCola(camionDTO);
+        const respuesta = await DispatchService.encolarCamion(camionDTO);
 
         if (respuesta.ok) {
             document.getElementById("form-dispatch").reset();
             state.dispatch.page = 0;
-            await Promise.all([cargarColaDespacho(), cargarHistorialAuditoria()]);
+
+            // 1. Inyección reactiva inmediata en el DOM (local)
+            state.dispatch.data.push(camionDTO);
+            
+            const enrichedLog = {
+                accion: "ENCOLADO",
+                lote: camionDTO.placa,
+                detalle: `Conductor: ${camionDTO.conductor}`,
+                hora: obtenerHoraPeruana()
+            };
+            if (window.pilaAuditoria && window.pilaAuditoria.push) {
+                window.pilaAuditoria.push(enrichedLog);
+            }
+
+            const mockLog = {
+                idLog: "mock-" + Date.now(),
+                tipoAccion: "ENCOLAR CAMION",
+                microservicio: "dispatch-queue-service",
+                payload: JSON.stringify(camionDTO),
+                fechaRegistro: new Date().toISOString()
+            };
+            state.audit.data.unshift(mockLog);
+
+            renderizarColaDespacho();
+            if (window.inyectarFilaAuditoriaInmediata) {
+                window.inyectarFilaAuditoriaInmediata(mockLog);
+            }
+            actualizarKPIs();
+
+            // 2. Sincronización silenciosa de fondo
+            cargarColaDespacho(true);
+            cargarHistorialAuditoria(true);
 
             // 🚨 Registrar alerta si es HAZMAT o P1
             if (camionDTO.tipoCarga === "HAZMAT" || camionDTO.ordenPrioridad === 1) {
@@ -461,43 +520,68 @@ async function despacharSiguienteCamion() {
     setLoadingState(btn, true);
 
     try {
-        const respuesta = await ApiClient.deleteNextTruck();
+        const respuesta = await DispatchService.despacharSiguiente();
+        const camionAtendido = await respuesta.json();
 
-        if (respuesta.status === 404) {
-            showToast("warning", "Cola Vacía", "No existen camiones en la cola de espera.");
-            return;
+        // 1. Inyección reactiva inmediata en el DOM (local)
+        state.dispatch.data.shift(); // Remove first truck
+        
+        const enrichedLog = {
+            accion: "DESPACHO",
+            lote: camionAtendido.placa,
+            detalle: `Conductor: ${camionAtendido.conductor}`,
+            hora: obtenerHoraPeruana()
+        };
+        if (window.pilaAuditoria && window.pilaAuditoria.push) {
+            window.pilaAuditoria.push(enrichedLog);
         }
-        if (respuesta.ok) {
-            const camionAtendido = await respuesta.json();
 
-            // 🚨 Alerta si el camión despachado era HAZMAT o P1
-            if ((camionAtendido.tipoCarga || "").toUpperCase() === "HAZMAT" ||
-                camionAtendido.ordenPrioridad === 1) {
-                registrarAlerta("DESPACHADO", camionAtendido);
-            }
+        const mockLog = {
+            idLog: "mock-" + Date.now(),
+            tipoAccion: "DESPACHAR CAMION",
+            microservicio: "dispatch-queue-service",
+            payload: JSON.stringify(camionAtendido),
+            fechaRegistro: new Date().toISOString()
+        };
+        state.audit.data.unshift(mockLog);
 
-            await Promise.all([cargarColaDespacho(), cargarHistorialAuditoria()]);
-            showToast("info", "Camión Despachado",
-                `Placa: ${camionAtendido.placa} · Conductor: ${camionAtendido.conductor}`);
+        renderizarColaDespacho();
+        if (window.inyectarFilaAuditoriaInmediata) {
+            window.inyectarFilaAuditoriaInmediata(mockLog);
         }
+        actualizarKPIs();
+
+        // 2. Sincronización silenciosa de fondo
+        cargarColaDespacho(true);
+        cargarHistorialAuditoria(true);
+
+        // 🚨 Alerta si el camión despachado era HAZMAT o P1
+        if ((camionAtendido.tipoCarga || "").toUpperCase() === "HAZMAT" ||
+            camionAtendido.ordenPrioridad === 1) {
+            registrarAlerta("DESPACHADO", camionAtendido);
+        }
+
+        showToast("info", "Camión Despachado",
+            `Placa: ${camionAtendido.placa} · Conductor: ${camionAtendido.conductor}`);
     } catch (error) {
-        console.error(error);
-        showToast("error", "Sin Conexión", "Error al intentar despachar el siguiente camión.");
+        if (error.status === 404) {
+            showToast("warning", "Cola Vacía", error.message);
+        } else {
+            console.error(error);
+            showToast("error", "Sin Conexión", error.message || "Error al intentar despachar el siguiente camión.");
+        }
     } finally {
         setLoadingState(btn, false);
     }
 }
 
-async function cargarColaDespacho() {
+async function cargarColaDespacho(silent = false) {
     try {
-        state.dispatch.data = await ApiClient.getDispatchTrucks();
-        renderizarColaDespacho();
-        actualizarGrafico();          // 📊 Refrescar el gráfico
+        const trucks = await DispatchService.obtenerCola();
+        Store.updateDispatch(trucks);
     } catch (error) {
         console.error(error);
-        state.dispatch.data = [];
-        renderizarColaDespacho();
-        actualizarGrafico();
+        Store.updateDispatch([]);
     }
 }
 
@@ -514,10 +598,11 @@ function renderizarColaDespacho() {
     const end   = Math.min(start + PAGE_SIZE_DISPATCH, data.length);
     const slice = data.slice(start, end);
 
-    document.getElementById("dispatch-count").textContent = data.length;
+    const dispatchCountEl = document.getElementById("dispatch-count");
+    if (dispatchCountEl) dispatchCountEl.textContent = data.length + " en cola";
 
     if (data.length === 0) {
-        contenedorCola.innerHTML = crearEmptyState("fa-truck-ramp-box", "No hay camiones en la cola de despacho.");
+        contenedorCola.innerHTML = `<tr><td colspan="6" class="empty-table-cell" style="text-align: center; padding: 24px; color: #94a3b8;"><i class="fa-solid fa-truck-ramp-box" style="margin-right: 8px;"></i>No hay camiones en la cola de despacho.</td></tr>`;
         actualizarPaginacion("dispatch", 0, 1, 0, 0);
         actualizarKPIs();
         return;
@@ -530,27 +615,43 @@ function renderizarColaDespacho() {
             const cargoClass = getCargoClass(c.tipoCarga);
             const prioClass  = getPriorityClass(c.ordenPrioridad);
             const globalIdx  = start + idx + 1;
+            const mockTime   = getMockEnqueuedTime(c.placa);
 
-            const div = document.createElement("div");
-            div.className = "item-card item-card--dispatch" +
-                (idx === 0 && safePage === 0 ? " is-new" : "");
-            div.setAttribute("role", "listitem");
-            div.innerHTML = `
-                <div class="item-card__left">
-                    <span class="item-card__id">
-                        <i class="fa-solid fa-truck amber" aria-hidden="true"></i>
-                        <span style="color:var(--text-muted);font-size:0.60rem;margin-right:2px">#${globalIdx}</span>
-                        ${escHtml(c.placa)}
-                    </span>
-                    <span class="item-card__sub">Cond: ${escHtml(c.conductor)}</span>
-                </div>
-                <div class="item-card__right">
-                    <span class="badge-cargo ${cargoClass}">
-                        ${getCargoIcon(c.tipoCarga)} ${escHtml(c.tipoCarga)}
-                    </span>
-                    <span class="badge-priority ${prioClass}">${getPriorityLabel(c.ordenPrioridad)}</span>
-                </div>`;
-            fragment.appendChild(div);
+            const tr = document.createElement("tr");
+            if (idx === 0 && safePage === 0) {
+                tr.className = "is-new";
+            }
+            
+            // Cargo icons & labels
+            let cargoBadge = "";
+            const cargoUpper = (c.tipoCarga || "").toUpperCase();
+            if (cargoUpper === "HAZMAT") {
+                cargoBadge = `<span class="badge-cargo badge-cargo--hazmat"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 4px;"></i>HAZMAT</span>`;
+            } else if (cargoUpper === "REEFER") {
+                cargoBadge = `<span class="badge-cargo badge-cargo--reefer"><i class="fa-solid fa-snowflake" style="margin-right: 4px;"></i>REEFER</span>`;
+            } else {
+                cargoBadge = `<span class="badge-cargo badge-cargo--dry"><i class="fa-solid fa-box" style="margin-right: 4px;"></i>DRY</span>`;
+            }
+
+            // Priority label & badge
+            let prioBadge = "";
+            if (c.ordenPrioridad === 1) {
+                prioBadge = `<span class="badge-priority badge-priority--critical">Crítico</span>`;
+            } else if (c.ordenPrioridad === 2) {
+                prioBadge = `<span class="badge-priority badge-priority--normal">Normal</span>`;
+            } else {
+                prioBadge = `<span class="badge-priority badge-priority--low">Bajo</span>`;
+            }
+
+            tr.innerHTML = `
+                <td style="text-align: center; font-weight: 700; color: #94a3b8;">${globalIdx}</td>
+                <td style="font-weight: 700; color: #00555a;">${escHtml(c.placa)}</td>
+                <td style="font-weight: 600; color: #0f2527;">${escHtml(c.conductor)}</td>
+                <td>${cargoBadge}</td>
+                <td>${prioBadge}</td>
+                <td style="text-align: right; padding-right: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #475569; font-weight: 500;">${mockTime}</td>
+            `;
+            fragment.appendChild(tr);
         });
 
         contenedorCola.innerHTML = "";
@@ -601,7 +702,7 @@ function inicializarGrafico() {
                     "rgba(239,68,68,0.80)"
                 ],
                 borderWidth: 1,
-                borderRadius: 6,
+                borderRadius: 4,
                 borderSkipped: false,
                 barThickness: 36
             }]
@@ -717,7 +818,8 @@ function registrarAlerta(evento, camion) {
         hora
     };
 
-    state.alerts.unshift(alerta);            // LIFO visual (más reciente arriba)
+    const updatedAlerts = [alerta, ...Store.getState().alerts];
+    Store.updateAlerts(updatedAlerts);
     renderizarAlertaEntrada(alerta, true);   // Insertar al tope del feed
     actualizarContadorAlertas();
 }
@@ -752,6 +854,14 @@ function renderizarAlertaEntrada(alerta, isNew = false) {
 
     // Insertar al principio del feed
     feed.insertBefore(div, feed.firstChild);
+
+    // Animación de entrada elástica con GSAP
+    if (typeof gsap !== "undefined") {
+        gsap.fromTo(div, 
+            { opacity: 0, x: -30, scale: 0.95 }, 
+            { opacity: 1, x: 0, scale: 1, duration: 0.4, ease: "back.out(1.7)" }
+        );
+    }
 }
 
 function actualizarContadorAlertas() {
@@ -760,7 +870,7 @@ function actualizarContadorAlertas() {
 }
 
 function limpiarAlertas() {
-    state.alerts = [];
+    Store.updateAlerts([]);
     const feed = document.getElementById("alerts-feed");
     if (feed) {
         feed.innerHTML = crearEmptyState(
@@ -776,14 +886,95 @@ function limpiarAlertas() {
 // ⏱️  SECCIÓN 3 — HISTORIAL DE AUDITORÍA (Pila LIFO · Puerto 8083)
 // =========================================================================
 
-async function cargarHistorialAuditoria() {
+function obtenerHoraPeruana() {
+    return new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
+}
+
+function mapSingleBackendLogToEnriched(log) {
+    let accion = "INGRESO";
+    const tipo = (log.tipoAccion || "").toUpperCase();
+    if (tipo.includes("DESPACHAR")) {
+        accion = "DESPACHO";
+    } else if (tipo.includes("ENCOLAR")) {
+        accion = "ENCOLADO";
+    } else if (tipo.includes("INGRESAR") || tipo.includes("YARD") || tipo.includes("REGISTRO")) {
+        accion = "INGRESO";
+    } else if (tipo.includes("UNDO") || tipo.includes("DESHACER")) {
+        accion = "DESHACER";
+    }
+
+    let lote = "";
+    let detalle = "";
     try {
-        state.audit.data = await ApiClient.getAuditLogs();
-        renderizarAuditoria();
+        const payloadObj = JSON.parse(log.payload);
+        if (payloadObj.placa) {
+            lote = payloadObj.placa;
+            detalle = `Conductor: ${payloadObj.conductor || "Desconocido"}`;
+        } else if (payloadObj.codigoId || payloadObj.codigoID) {
+            lote = payloadObj.codigoId || payloadObj.codigoID;
+            let bayCode = "A1";
+            if (state && state.yard && state.yard.data) {
+                const idx = state.yard.data.findIndex(c => c.codigoId === lote || c.codigoID === lote);
+                if (idx !== -1) {
+                    const rowChar = ["A", "B", "C", "D", "E"][Math.floor(idx / 6)] || "A";
+                    const colNum = (idx % 6) + 1;
+                    bayCode = rowChar + colNum;
+                } else {
+                    const rowChar = ["A", "B", "C", "D", "E"][Math.floor(Math.random() * 5)];
+                    const colNum = Math.floor(Math.random() * 6) + 1;
+                    bayCode = rowChar + colNum;
+                }
+            }
+            detalle = `Bahía ${bayCode} — ${payloadObj.destino || "APM Terminals"}`;
+        } else {
+            lote = payloadObj.id || Object.values(payloadObj)[0] || "";
+            detalle = log.tipoAccion;
+        }
+    } catch {
+        lote = log.payload || "";
+        detalle = log.tipoAccion;
+    }
+
+    const hora = log.idLog && String(log.idLog).startsWith("mock") ? obtenerHoraPeruana() : getMockAuditTime(log.idLog);
+
+    return {
+        accion,
+        lote,
+        detalle,
+        hora
+    };
+}
+
+function rebuildPilaAuditoria(logs) {
+    if (!window.pilaAuditoria) {
+        const pila = [];
+        pila.push = function(item) { Array.prototype.unshift.call(this, item); };
+        pila.pop = function() { return Array.prototype.shift.call(this); };
+        window.pilaAuditoria = pila;
+    }
+    window.pilaAuditoria.length = 0;
+    logs.forEach(log => {
+        Array.prototype.push.call(window.pilaAuditoria, mapSingleBackendLogToEnriched(log));
+    });
+}
+
+window.obtenerHoraPeruana = obtenerHoraPeruana;
+window.mapSingleBackendLogToEnriched = mapSingleBackendLogToEnriched;
+window.rebuildPilaAuditoria = rebuildPilaAuditoria;
+
+// Inicialización de la pilaAuditoria
+const initialPila = [];
+initialPila.push = function(item) { Array.prototype.unshift.call(this, item); };
+initialPila.pop = function() { return Array.prototype.shift.call(this); };
+window.pilaAuditoria = initialPila;
+
+async function cargarHistorialAuditoria(silent = false) {
+    try {
+        const logs = await ApiClient.getAuditLogs();
+        Store.updateAudit(logs);
     } catch (error) {
         console.error(error);
-        state.audit.data = [];
-        renderizarAuditoria();
+        Store.updateAudit([]);
     }
 }
 
@@ -791,16 +982,25 @@ function renderizarAuditoria() {
     const contenedorList = document.getElementById("audit-list");
     if (!contenedorList) return;
 
-    const { data, page } = state.audit;
+    if (!window.pilaAuditoria) {
+        window.pilaAuditoria = [];
+    }
+    const data = window.pilaAuditoria;
     const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE_AUDIT));
-    const safePage   = Math.min(page, totalPages - 1);
+    const safePage   = Math.min(state.audit.page, totalPages - 1);
     state.audit.page = safePage;
 
     const start = safePage * PAGE_SIZE_AUDIT;
     const end   = Math.min(start + PAGE_SIZE_AUDIT, data.length);
     const slice = data.slice(start, end);
 
-    document.getElementById("audit-count").textContent = data.length;
+    const auditCountEl = document.getElementById("audit-count");
+    if (auditCountEl) auditCountEl.textContent = data.length;
+
+    const btnUndo = document.getElementById("btn-audit-undo");
+    if (btnUndo) {
+        btnUndo.disabled = (data.length === 0);
+    }
 
     if (data.length === 0) {
         contenedorList.innerHTML = crearEmptyState("fa-inbox", "No hay transacciones en el historial.");
@@ -813,32 +1013,22 @@ function renderizarAuditoria() {
         const fragment = document.createDocumentFragment();
 
         slice.forEach((log) => {
-            let metadata = "";
-            try {
-                const d = JSON.parse(log.payload);
-                metadata = Object.entries(d).map(([k, v]) =>
-                    `${escHtml(k)}: ${escHtml(String(v))}`
-                ).join(" &bull; ");
-            } catch {
-                metadata = escHtml(log.payload || "—");
-            }
-
-            const tipo        = (log.tipoAccion || "").toUpperCase();
-            const actionClass = getAuditActionClass(tipo);
-            const entryClass  = getAuditEntryClass(tipo);
-
+            let statusClass = "status-info";
+            if (log.accion === "INGRESO") statusClass = "status-ingreso";
+            else if (log.accion === "ENCOLADO") statusClass = "status-encolado";
+            else if (log.accion === "DESPACHO") statusClass = "status-despacho";
+            else if (log.accion === "DESHACER") statusClass = "status-deshacer";
+            
             const div = document.createElement("div");
-            div.className = `audit-entry ${entryClass}`;
+            div.className = "audit-log-row";
             div.setAttribute("role", "listitem");
             div.innerHTML = `
-                <div class="audit-entry__header">
-                    <span class="audit-entry__id">LOG_ID: ${escHtml(String(log.idLog))}</span>
-                    <span class="audit-entry__action ${actionClass}">${escHtml(tipo)}</span>
+                <div class="audit-log-row__left" style="display: flex; align-items: center; gap: 12px;">
+                    <span class="audit-badge ${log.accion.toLowerCase()}">${escHtml(log.accion)}</span>
+                    <span class="audit-log-row__detail" style="font-weight: 600; color: #0f2527; font-size: 0.85rem;">${escHtml(log.lote)} — ${escHtml(log.detalle)}</span>
                 </div>
-                <p class="audit-entry__origin">
-                    Origen: <span>${escHtml(log.microservicio || "—")}</span>
-                </p>
-                <div class="audit-entry__payload">${metadata}</div>`;
+                <div class="audit-log-row__time" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #94a3b8; font-weight: 500;">${escHtml(log.hora)}</div>
+            `;
             fragment.appendChild(div);
         });
 
@@ -849,26 +1039,160 @@ function renderizarAuditoria() {
     });
 }
 
+function inyectarFilaAuditoriaInmediata(log) {
+    const contenedorList = document.getElementById("audit-list");
+    if (!contenedorList) return;
+
+    const emptyState = contenedorList.querySelector(".empty-state");
+    if (emptyState) emptyState.remove();
+
+    let enrichedLog = log;
+    if (log.tipoAccion) {
+        enrichedLog = mapSingleBackendLogToEnriched(log);
+    }
+
+    if (!window.pilaAuditoria) {
+        const pila = [];
+        pila.push = function(item) { Array.prototype.unshift.call(this, item); };
+        pila.pop = function() { return Array.prototype.shift.call(this); };
+        window.pilaAuditoria = pila;
+    }
+    
+    const alreadyExists = window.pilaAuditoria.some(item => item.lote === enrichedLog.lote && item.accion === enrichedLog.accion && item.hora === enrichedLog.hora);
+    if (!alreadyExists) {
+        window.pilaAuditoria.push(enrichedLog);
+    }
+
+    let statusClass = "status-info";
+    if (enrichedLog.accion === "INGRESO") statusClass = "status-ingreso";
+    else if (enrichedLog.accion === "ENCOLADO") statusClass = "status-encolado";
+    else if (enrichedLog.accion === "DESPACHO") statusClass = "status-despacho";
+    else if (enrichedLog.accion === "DESHACER") statusClass = "status-deshacer";
+
+    const div = document.createElement("div");
+    div.className = "audit-log-row";
+    div.setAttribute("role", "listitem");
+    div.innerHTML = `
+        <div class="audit-log-row__left" style="display: flex; align-items: center; gap: 12px;">
+            <span class="audit-badge ${enrichedLog.accion.toLowerCase()}">${escHtml(enrichedLog.accion)}</span>
+            <span class="audit-log-row__detail" style="font-weight: 600; color: #0f2527; font-size: 0.85rem;">${escHtml(enrichedLog.lote)} — ${escHtml(enrichedLog.detalle)}</span>
+        </div>
+        <div class="audit-log-row__time" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #94a3b8; font-weight: 500;">${escHtml(enrichedLog.hora)}</div>
+    `;
+
+    contenedorList.prepend(div);
+
+    if (typeof gsap !== 'undefined') {
+        gsap.fromTo(div, 
+            { opacity: 0, x: -30, scale: 0.95 }, 
+            { opacity: 1, x: 0, scale: 1, duration: 0.4, ease: "back.out(1.7)" }
+        );
+    }
+
+    const auditCountEl = document.getElementById("audit-count");
+    if (auditCountEl) {
+        auditCountEl.textContent = window.pilaAuditoria.length;
+    }
+
+    const btnUndo = document.getElementById("btn-audit-undo");
+    if (btnUndo) {
+        btnUndo.disabled = false;
+    }
+}
+window.inyectarFilaAuditoriaInmediata = inyectarFilaAuditoriaInmediata;
+
+window.isAuditLogLocked = false;
+
 async function deshacerUltimaAccion() {
+    if (window.isAuditLogLocked) {
+        console.warn("[deshacerUltimaAccion] Operación de Undo bloqueada por exclusión mutua.");
+        return;
+    }
+
     const btn = document.getElementById("btn-audit-undo");
+    if (!btn || btn.disabled) return;
+
+    if (state.audit.data.length === 0) {
+        btn.disabled = true;
+        showToast("warning", "Pila Vacía", "No quedan más acciones por revertir en la Pila LIFO.");
+        return;
+    }
+
+    window.isAuditLogLocked = true;
     setLoadingState(btn, true);
 
     try {
-        const respuesta = await ApiClient.postUndo();
+        const logEliminado = await AuditService.undoLastAction();
+        
+        // Revertir a nivel de negocio según el tipo de acción
+        const tipo = (logEliminado.tipoAccion || "").toUpperCase();
+        let revertExito = false;
+        let revertDetalle = "";
 
-        if (respuesta.status === 404) {
-            showToast("warning", "Pila Vacía", "No quedan más acciones por revertir en la Pila LIFO.");
-            return;
+        try {
+            const payloadObj = JSON.parse(logEliminado.payload);
+            if (tipo.includes("ENCOLAR")) {
+                if (payloadObj.placa) {
+                    const resDel = await DispatchService.eliminarCamion(payloadObj.placa);
+                    revertExito = resDel.ok;
+                    revertDetalle = `Camión ${payloadObj.placa} eliminado de la cola.`;
+                    
+                    // Pop local from FIFO Queue
+                    state.dispatch.data = state.dispatch.data.filter(t => t.placa !== payloadObj.placa);
+                }
+            } else if (tipo.includes("INGRESAR") || tipo.includes("YARD")) {
+                const containerId = payloadObj.codigoId || payloadObj.codigoID;
+                if (containerId) {
+                    const resDel = await YardService.retirarContenedor(containerId);
+                    revertExito = resDel.ok;
+                    revertDetalle = `Contenedor ${containerId} retirado del patio.`;
+                    
+                    // Pop local from Yard Double LinkedList
+                    state.yard.data = state.yard.data.filter(c => (c.codigoId !== containerId && c.codigoID !== containerId));
+                }
+            } else {
+                revertExito = true;
+            }
+        } catch (e) {
+            console.error("Fallo al revertir a nivel de negocio:", e);
         }
-        if (respuesta.ok) {
-            const logEliminado = await respuesta.json();
-            await Promise.all([cargarHistorialAuditoria(), cargarColaDespacho()]);
-            showToast("success", "Acción Revertida", `Tipo: ${logEliminado.tipoAccion}`);
+
+        // Pop local from audit data (latest is removed)
+        state.audit.data.shift();
+        if (window.pilaAuditoria && window.pilaAuditoria.pop) {
+            window.pilaAuditoria.pop();
+        }
+
+        // Render immediately local (no F5)
+        renderizarPatio();
+        renderizarHeatmap();
+        if (window.DoubleLinkedListComponent) {
+            window.DoubleLinkedListComponent.render(state.yard.data);
+        }
+        renderizarColaDespacho();
+        renderizarAuditoria();
+        actualizarKPIs();
+
+        // Background silent sync
+        cargarHistorialAuditoria(true);
+        cargarColaDespacho(true);
+        cargarPatioContenedores(true);
+
+        if (revertExito) {
+            showToast("success", "Acción Revertida", "La transacción ha sido desapilada y consolidada con éxito.");
+        } else {
+            showToast("error", "Reversión Incompleta", "El log de auditoría fue removido, pero falló la actualización en el servicio secundario (cola/patio).");
         }
     } catch (error) {
-        console.error(error);
-        showToast("error", "Sin Conexión", "Error al intentar revertir la acción en el servicio de auditoría.");
+        if (error.status === 404) {
+            showToast("warning", "Pila Vacía", error.message);
+            await Promise.all([cargarHistorialAuditoria(true), cargarColaDespacho(true), cargarPatioContenedores(true)]);
+        } else {
+            console.error("[deshacerUltimaAccion] Error:", error);
+            showToast("error", "Fallo de Reversión", error.message || "Error al intentar revertir la acción.");
+        }
     } finally {
+        window.isAuditLogLocked = false;
         setLoadingState(btn, false);
     }
 }

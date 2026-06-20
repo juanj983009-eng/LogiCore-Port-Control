@@ -9,6 +9,14 @@
    1. DESIGN TOKENS
    ========================================================================= */
 :root {
+  /* ── Core Design Tokens ── */
+  --color-industrial-dark: #0f172a;
+  --color-mimosa: #ffc94b;
+  --color-teal-dark: #00555a;
+  --color-critico-light: #fca5a5;
+  --color-critico-dark: #b91c1c;
+  --font-base: 'Inter', system-ui, sans-serif;
+
   /* ── Base Palette ── */
   --bg-void:        #050810;
   --bg-surface:     #0b0f19;
@@ -106,12 +114,12 @@
   --p3-bg: rgba(148, 163, 184, 0.10); --p3-border: rgba(148, 163, 184, 0.28); --p3-text: #cbd5e1;
 
   /* ── Radii ── */
-  --r-xs:  4px;
-  --r-sm:  8px;
-  --r-md:  12px;
-  --r-lg:  16px;
-  --r-xl:  20px;
-  --r-2xl: 28px;
+  --r-xs:  2px;
+  --r-sm:  4px;
+  --r-md:  6px;
+  --r-lg:  6px;
+  --r-xl:  6px;
+  --r-2xl: 6px;
 
   /* ── Shadows (light mode — neutral elevation, no colored glows) ── */
   --shadow-card:         0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
@@ -132,7 +140,33 @@
   --dur-fast: 150ms;
   --dur-base: 300ms;
   --dur-slow: 500ms;
+
+  /* ═══════════════════════════════════════════════════════
+     🇵🇪  CALLAO INSTITUTIONAL BRAND TOKENS
+     Diseño industrial limpio — Puerto del Callao
+     ═══════════════════════════════════════════════════════ */
+
+  /* Teal institucional — cabeceras, borders, iconos primarios */
+  --primary-teal:        #00555a;
+  --primary-teal-mid:    #006f76;
+  --primary-teal-light:  #e6f4f5;
+  --primary-teal-glow:   rgba(0, 85, 90, 0.18);
+  --primary-teal-border: rgba(0, 85, 90, 0.30);
+
+  /* Mimosa — botón principal "Encolar Camión", alertas Hazmat, prioridades P1 */
+  --accent-mimosa:        #ffc94b;
+  --accent-mimosa-dark:   #e6a800;
+  --accent-mimosa-light:  #fff8e6;
+  --accent-mimosa-glow:   rgba(255, 201, 75, 0.22);
+  --accent-mimosa-border: rgba(255, 201, 75, 0.40);
+
+  /* Background principal — limpio y desaturado */
+  --bg-main:    #f7f9fa;
+  --card-bg:    #ffffff;
+  --card-radius: 6px;
+  --card-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
+
 
 /* =========================================================================
    2. RESET & BASE
@@ -149,13 +183,14 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-main);
   color: var(--text-main);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   line-height: 1.6;
 }
+
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
@@ -180,15 +215,13 @@ nav {
   align-items: center;
   justify-content: space-between;
   padding: 0 1.75rem;
-  background: rgba(11, 15, 25, 0.82);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border-bottom: 1px solid var(--border-glass);
-  /* Subtle top line highlight */
-  box-shadow:
-    0 1px 0 0 rgba(255,255,255,0.04),
-    0 4px 24px rgba(0,0,0,0.40);
+  background: var(--primary-teal);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 3px solid var(--accent-mimosa);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
+
 
 /* ── Brand ── */
 .lc-header__brand { display: flex; align-items: center; gap: 12px; }
@@ -196,18 +229,18 @@ nav {
 .lc-header__icon-wrap {
   width: 38px; height: 38px;
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--cyan-500) 0%, var(--cyan-700) 100%);
+  background: rgba(255,255,255,0.18);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset,
-              0 0 20px var(--cyan-glow);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.22) inset;
   animation: brand-breathe 3.5s ease-in-out infinite;
   flex-shrink: 0;
 }
 
 @keyframes brand-breathe {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px var(--cyan-glow); }
-  50%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset, 0 0 32px rgba(6,182,212,0.40); }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.22) inset, 0 0 12px var(--accent-mimosa-glow); }
+  50%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.32) inset, 0 0 24px rgba(255,201,75,0.35); }
 }
+
 
 .lc-header__icon-wrap i { font-size: 17px; color: #fff; }
 
@@ -215,7 +248,7 @@ nav {
   font-size: 0.975rem;
   font-weight: 800;
   letter-spacing: 0.07em;
-  color: var(--text-primary);
+  color: #ffffff;
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -224,20 +257,22 @@ nav {
 .lc-header__title span {
   font-weight: 400;
   font-size: 0.72rem;
-  color: var(--cyan-400);
+  color: var(--accent-mimosa);
   letter-spacing: 0.03em;
 }
+
 
 /* ── Meta / right ── */
 .lc-header__meta { display: flex; align-items: center; gap: 14px; }
 
 .lc-header__student {
-  font-size: 0.95rem !important;
-  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
   letter-spacing: normal !important;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.80);
 }
-.lc-header__student span { color: var(--text-secondary); font-weight: 600; }
+.lc-header__student span { color: #ffffff; font-weight: 700; }
+
 
 .lc-header__status {
   display: flex;
@@ -245,26 +280,27 @@ nav {
   gap: 6px;
   padding: 5px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(52, 211, 153, 0.22);
-  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.12);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--emerald-400);
+  color: #ffffff;
 }
 
 .status-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--emerald-400);
-  box-shadow: 0 0 6px var(--emerald-400);
+  background: var(--accent-mimosa);
+  box-shadow: 0 0 6px var(--accent-mimosa);
   animation: status-pulse 2.2s ease-in-out infinite;
 }
 
 @keyframes status-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px var(--emerald-400); }
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px var(--accent-mimosa); }
   50%       { opacity: 0.45; transform: scale(0.75); box-shadow: none; }
 }
+
 
 /* =========================================================================
    3.5. NAVBAR DE NAVEGACIÓN MPA
@@ -361,6 +397,170 @@ nav {
 }
 
 /* =========================================================================
+   3.6. HEADER — CALLAO FIGMA EXACT (lc-header--callao)
+   Layout: Brand + Port badge (left) | Status + Operator (right)
+   ========================================================================= */
+
+.lc-header--callao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+/* ── Brand block (left) ── */
+.lc-header--callao .lc-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+/* Anchor icon wrap — white translucent circle */
+.lc-header--callao .lc-header__icon-wrap {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.32);
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.lc-header--callao .lc-header__icon-wrap:hover {
+  background: rgba(255,255,255,0.28);
+}
+.lc-header--callao .lc-header__icon-wrap i {
+  font-size: 18px;
+  color: #fff;
+}
+
+/* Wordmark + tagline stacked */
+.lc-header__brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.1;
+}
+.lc-header__wordmark {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  color: #ffffff;
+  font-family: var(--font-sans);
+}
+.lc-header__tagline {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.60);
+}
+
+/* Vertical divider between brand and port badge */
+.lc-header__divider {
+  width: 1px;
+  height: 26px;
+  background: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+/* Port badge pill */
+.lc-header__port-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.90);
+  white-space: nowrap;
+}
+.lc-header__port-badge i { font-size: 11px; }
+
+/* ── Meta block (right) ── */
+.lc-header--callao .lc-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+/* "System: Online" badge */
+.lc-header--callao .lc-header__status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.10);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+}
+.lc-header--callao .lc-header__status strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Separator pipe between status and operator */
+.lc-header__meta-sep {
+  color: rgba(255,255,255,0.30);
+  font-size: 1rem;
+  user-select: none;
+}
+
+/* User icon */
+.lc-header__user-icon {
+  font-size: 1.1rem;
+  color: var(--accent-mimosa);
+  flex-shrink: 0;
+}
+
+/* Operator block */
+.lc-header__operator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lc-header__operator-text {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+}
+.lc-header__operator-text strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+.lc-header__operator-sep {
+  margin: 0 5px;
+  color: rgba(255,255,255,0.30);
+}
+
+/* Responsive collapse at 900px */
+@media (max-width: 900px) {
+  .lc-header__port-badge,
+  .lc-header__divider { display: none; }
+  .lc-header__operator-text { font-size: 0.65rem; }
+}
+@media (max-width: 600px) {
+  .lc-header--callao { padding: 0 1rem; gap: 0.75rem; }
+  .lc-header__meta-sep,
+  .lc-header__operator { display: none; }
+}
+
+
+
+/* =========================================================================
    4. MAIN LAYOUT
    ========================================================================= */
 
@@ -376,13 +576,19 @@ nav {
 
 /* ── KPI Row ── */
 .kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 1.25rem;
   width: 100%;
   margin-bottom: 1.25rem;
   flex-shrink: 0;
 }
+
+.kpi-grid .kpi-card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 
 .kpi-grid--3cols {
   grid-template-columns: repeat(3, 1fr);
@@ -511,16 +717,16 @@ nav {
   font-weight: 500;
 }
 
-/* Variants — 4px semantic left border, accent colors preserved */
+/* Variants — semantic left border with Callao institutional palette */
 .kpi-card--cyan {
-  --kpi-color: var(--cyan-600);
-  --kpi-line: linear-gradient(90deg, transparent, var(--cyan-500), transparent);
-  border-left: 4px solid var(--cyan-500) !important;
+  --kpi-color: var(--primary-teal);
+  --kpi-line: linear-gradient(90deg, transparent, var(--primary-teal), transparent);
+  border-left: 4px solid var(--primary-teal) !important;
 }
 .kpi-card--amber {
-  --kpi-color: var(--amber-600);
-  --kpi-line: linear-gradient(90deg, transparent, var(--amber-500), transparent);
-  border-left: 4px solid var(--amber-500) !important;
+  --kpi-color: var(--accent-mimosa-dark);
+  --kpi-line: linear-gradient(90deg, transparent, var(--accent-mimosa), transparent);
+  border-left: 4px solid var(--accent-mimosa) !important;
 }
 .kpi-card--emerald {
   --kpi-color: var(--emerald-600);
@@ -532,6 +738,198 @@ nav {
   --kpi-line: linear-gradient(90deg, transparent, var(--red-500), transparent);
   border-left: 4px solid var(--red-500) !important;
 }
+
+
+/* =========================================================================
+   5.5. KPI CARDS — FIGMA CALLAO VARIANTS
+   4 tarjetas individualizadas exactas al diseño Figma del Puerto del Callao
+   ========================================================================= */
+
+/* ── Shared Figma card structure ── */
+.kpi-card {
+  position: relative;
+  border-radius: var(--card-radius, 12px) !important;
+  padding: 1.125rem 1.25rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  box-shadow: var(--card-shadow, 0 4px 12px rgba(0,0,0,0.05)) !important;
+  transition: box-shadow 0.22s ease, transform 0.22s ease !important;
+  min-height: 148px;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
+}
+
+/* ── Header row: label + badge side by side ── */
+.kpi-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Label typography ── */
+.kpi-card__label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.2;
+}
+.kpi-card__label--dark {
+  color: var(--text-dark, #0f2527);
+  opacity: 0.65;
+}
+
+/* ── Value (big number) ── */
+.kpi-card__value {
+  font-family: var(--font-mono), monospace;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  margin: 0.25rem 0 0.5rem;
+}
+.kpi-card__value--dark {
+  color: var(--text-dark, #0f2527);
+}
+
+/* ── Sub label ── */
+.kpi-card__sub {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-top: auto;
+}
+.kpi-card__sub--dark {
+  color: rgba(15,37,39,0.55);
+}
+
+/* ── Badge (top-right pill: FIFO, ALERT) ── */
+.kpi-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.kpi-badge--dark {
+  background: var(--text-dark, #0f2527);
+  color: #ffffff;
+}
+.kpi-badge--white {
+  background: rgba(255,255,255,0.20);
+  color: #ffffff;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TARJETA 1 — CONTAINERS IN YARD
+   Fondo sólido Teal (#00555a). Texto blanco. Trend line SVG.
+───────────────────────────────────────────────────────────── */
+.kpi-card--teal-solid {
+  background: var(--primary-teal) !important;
+  border: none !important;
+  border-left: none !important;
+}
+.kpi-card--teal-solid::after {
+  background: none !important;
+}
+
+/* Inline sparkline SVG */
+.kpi-trend-line {
+  width: 100%;
+  height: 28px;
+  display: block;
+  margin: 0.25rem 0 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TARJETA 2 — TRUCKS IN QUEUE
+   Fondo blanco. Borde completo Mimosa. Badge FIFO negro.
+   Rectángulo Mimosa sólido en la zona inferior.
+───────────────────────────────────────────────────────────── */
+.kpi-card--mimosa-border {
+  background: var(--card-bg, #ffffff) !important;
+  border: 2px solid var(--accent-mimosa) !important;
+}
+
+/* Barra mimosa inferior */
+.kpi-card__mimosa-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent-mimosa);
+  width: 100%;
+  margin: 0.4rem 0 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TARJETA 3 — AUDITED TRANSACTIONS
+   Fondo blanco. Borde gris. 3 barras teal LIFO.
+───────────────────────────────────────────────────────────── */
+.kpi-card--white-bars {
+  background: var(--card-bg, #ffffff) !important;
+  border: 1px solid var(--border-neutral, #CBD5E1) !important;
+}
+
+/* Contenedor de barras de progreso */
+.kpi-progress-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0.35rem 0 0.5rem;
+  flex-shrink: 0;
+}
+.kpi-pb-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(0,85,90,0.10);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.kpi-pb-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s var(--ease-out, ease);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TARJETA 4 — HAZMAT IN QUEUE
+   Fondo sólido Mimosa (#ffc94b). Texto oscuro. Badge ALERT negro.
+   Icono advertencia oscuro.
+───────────────────────────────────────────────────────────── */
+.kpi-card--mimosa-solid {
+  background: var(--accent-mimosa) !important;
+  border: none !important;
+  border-left: none !important;
+}
+.kpi-card--mimosa-solid::after {
+  background: none !important;
+}
+
+/* Icono de peligro / advertencia */
+.kpi-hazmat-icon {
+  font-size: 1.15rem;
+  color: var(--text-dark, #0f2527);
+  opacity: 0.70;
+  margin: 0.25rem 0 0.4rem;
+  display: block;
+  flex-shrink: 0;
+}
+
 
 /* =========================================================================
    6. BENTO CARDS — Glassmorphism panels
@@ -571,13 +969,14 @@ nav {
   z-index: 2;
 }
 
-/* Card variants — 4px semantic left border for clear module segmentation */
-.card--yard    { border-left: 4px solid var(--accent-celeste) !important; }
-.card--dispatch{ border-left: 4px solid var(--accent-yellow)  !important; }
-.card--heatmap { border-left: 4px solid var(--accent-celeste) !important; overflow: visible !important; }
+/* Card variants — 4px semantic left border — Callao palette */
+.card--yard    { border-left: 4px solid var(--primary-teal)   !important; }
+.card--dispatch{ border-left: 4px solid var(--accent-mimosa)  !important; }
+.card--heatmap { border-left: 4px solid var(--primary-teal)   !important; overflow: visible !important; }
 .card--alerts  { border-left: 4px solid var(--accent-red)     !important; }
-.card--chart   { border-left: 4px solid var(--accent-yellow)  !important; }
+.card--chart   { border-left: 4px solid var(--accent-mimosa)  !important; }
 .card--audit   { border-left: 4px solid var(--emerald-500)    !important; }
+
 
 /* Linearized yard layout — full-width block reset for all three sub-panels */
 #form-yard,
@@ -611,18 +1010,18 @@ nav {
   transform: translateY(-2px);
 }
 
-/* Preserve semantic left-border on hover — yard (cyan) */
+/* Preserve semantic left-border on hover — yard (teal) */
 .card--yard:hover,
 .card--heatmap:hover,
 #yard-control-section:hover {
-  border-left-color: #0891B2 !important;
+  border-left-color: var(--primary-teal) !important;
 }
 
-/* Preserve semantic left-border on hover — dispatch (amber) */
+/* Preserve semantic left-border on hover — dispatch (mimosa) */
 .card--dispatch:hover,
 .card--chart:hover,
 #dispatch-section:hover {
-  border-left-color: var(--accent-yellow) !important;
+  border-left-color: var(--accent-mimosa) !important;
 }
 
 /* Preserve semantic left-border on hover — alerts (red) */
@@ -636,10 +1035,11 @@ nav {
 }
 
 /* Preserve semantic left-border on hover — KPI variants */
-.kpi-card--cyan:hover    { border-left-color: var(--cyan-500)    !important; }
-.kpi-card--amber:hover   { border-left-color: var(--amber-500)   !important; }
-.kpi-card--emerald:hover { border-left-color: var(--emerald-500) !important; }
-.kpi-card--red:hover     { border-left-color: var(--red-500)     !important; }
+.kpi-card--cyan:hover    { border-left-color: var(--primary-teal)   !important; }
+.kpi-card--amber:hover   { border-left-color: var(--accent-mimosa)  !important; }
+.kpi-card--emerald:hover { border-left-color: var(--emerald-500)    !important; }
+.kpi-card--red:hover     { border-left-color: var(--red-500)        !important; }
+
 
 /* =========================================================================
    7. CARD HEADER
@@ -702,10 +1102,11 @@ nav {
   box-shadow: 0 0 12px rgba(239,68,68,0.10);
 }
 
-.card-title__text--cyan    { font-size: 0.875rem; font-weight: 700; color: var(--cyan-300); letter-spacing: 0.01em; }
-.card-title__text--amber   { font-size: 0.875rem; font-weight: 700; color: var(--amber-300); letter-spacing: 0.01em; }
-.card-title__text--emerald { font-size: 0.875rem; font-weight: 700; color: var(--emerald-300); letter-spacing: 0.01em; }
+.card-title__text--cyan    { font-size: 0.875rem; font-weight: 700; color: var(--primary-teal); letter-spacing: 0.01em; }
+.card-title__text--amber   { font-size: 0.875rem; font-weight: 700; color: var(--accent-mimosa-dark); letter-spacing: 0.01em; }
+.card-title__text--emerald { font-size: 0.875rem; font-weight: 700; color: var(--emerald-600); letter-spacing: 0.01em; }
 .card-title__text--red     { font-size: 0.875rem; font-weight: 700; color: var(--red-300); letter-spacing: 0.01em; }
+
 
 /* ── Data Structure Badge ── */
 .ds-badge {
@@ -859,26 +1260,30 @@ select:focus {
 }
 @keyframes ripple-anim { to { transform: scale(4.5); opacity: 0; } }
 
-/* Variants */
+/* Variante Teal — Identidad institucional Callao (botones de Patio, headers) */
 .lc-btn--cyan {
-  background: var(--accent-celeste) !important;
+  background: var(--primary-teal) !important;
   color: #fff !important;
-  box-shadow: 0 4px 16px rgba(6,182,212,0.22), 0 1px 0 rgba(255,255,255,0.10) inset;
+  box-shadow: 0 4px 16px var(--primary-teal-glow), 0 1px 0 rgba(255,255,255,0.10) inset;
 }
 .lc-btn--cyan:hover {
-  background: #0891b2 !important;
-  box-shadow: 0 6px 26px rgba(6,182,212,0.36), 0 1px 0 rgba(255,255,255,0.14) inset;
+  background: var(--primary-teal-mid) !important;
+  box-shadow: 0 6px 26px rgba(0,85,90,0.38), 0 1px 0 rgba(255,255,255,0.14) inset;
 }
 
+/* Variante Mimosa — Acción principal Callao (Encolar Camión, alertas Hazmat) */
 .lc-btn--amber {
-  background: var(--accent-yellow) !important;
-  color: #0F172A !important;
-  box-shadow: 0 4px 16px rgba(250,204,21,0.22), 0 1px 0 rgba(255,255,255,0.10) inset;
+  background: var(--accent-mimosa) !important;
+  color: #1a1200 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 16px var(--accent-mimosa-glow), 0 1px 0 rgba(255,255,255,0.14) inset;
 }
 .lc-btn--amber:hover {
-  background: #eab308 !important;
-  box-shadow: 0 6px 26px rgba(250,204,21,0.36), 0 1px 0 rgba(255,255,255,0.14) inset;
+  background: var(--accent-mimosa-dark) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 26px rgba(255,201,75,0.40), 0 1px 0 rgba(255,255,255,0.12) inset;
 }
+
 
 .lc-btn--red {
   background: var(--accent-red) !important;
@@ -1107,7 +1512,7 @@ select:focus {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid;
   display: inline-flex;
   align-items: center;
@@ -1202,7 +1607,7 @@ select:focus {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid;
 }
 
@@ -1296,7 +1701,7 @@ select:focus {
   width: 26px; height: 26px;
   border: 1px solid var(--border-dim);
   background: transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   color: var(--text-secondary);
   font-size: 0.68rem;
   cursor: pointer;
@@ -1330,7 +1735,7 @@ select:focus {
   /* Cap individual slot size so they don't grow beyond a compact square */
   max-width: 58px;
   width: 100%;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid;
   position: relative;
   cursor: default;
@@ -1440,6 +1845,14 @@ select:focus {
   font-size: 0.59rem;
   color: var(--text-muted);
   font-weight: 600;
+}
+
+.leyenda-vacio {
+  background-color: #ffffff !important;
+}
+
+.leyenda-lleno {
+  background-color: #00555a !important;
 }
 
 .hm-dot {
@@ -1824,83 +2237,7 @@ select:focus {
     border-radius: 8px !important;
 }
 
-/* ==========================================================================
-   PORTADA DE CARGA (SPLASH SCREEN) - TEXTURA TECNOLÓGICA
-   ========================================================================= */
-#splash-screen {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: #060a12;
-    
-    /* Cuadrícula base estática + Capa de gradiente lineal para el haz de luz en movimiento */
-    background-image: 
-        linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, transparent, rgba(0, 242, 254, 0.05), transparent);
-    
-    background-size: 40px 40px, 40px 40px, 100% 200px;
-    background-repeat: repeat, repeat, no-repeat;
-    background-position: center;
-    
-    display: flex; justify-content: center; align-items: center;
-    z-index: 10000;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    
-    /* Asigna la animación infinita de escaneo */
-    animation: radarScan 4s linear infinite;
-}
 
-@keyframes radarScan {
-    0% {
-        background-position: center, center, 0px -200px;
-    }
-    100% {
-        background-position: center, center, 0px 100vh;
-    }
-}
-
-.splash-content {
-    text-align: center;
-    font-family: system-ui, -apple-system, sans-serif;
-    position: relative;
-    padding: 40px;
-    background: rgba(9, 13, 22, 0.75);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 242, 254, 0.15);
-    border-radius: 16px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-}
-
-.splash-logo {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #00f2fe;
-    letter-spacing: 2px;
-    text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
-    margin-bottom: 5px;
-}
-
-.splash-subtitle {
-    font-size: 0.9rem;
-    color: #64748b;
-    margin-bottom: 25px;
-    text-transform: uppercase;
-}
-
-.spinner {
-    width: 40px; height: 40px; margin: 0 auto 15px;
-    border: 3px solid rgba(0, 242, 254, 0.1); border-top-color: #00f2fe; border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-#splash-status {
-    font-size: 0.8rem;
-    color: #00f2fe;
-    opacity: 0.8;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-.splash-hidden { opacity: 0; pointer-events: none; transform: translateY(-20px); }
 
 /* ==========================================================================
    ENTERPRISE LIGHT MODE — GLOBAL SURFACE OVERRIDE
@@ -2032,46 +2369,72 @@ select {
 /* ==========================================================================
    DOUBLY LINKED LIST NODE STYLES
    ========================================================================== */
-.dll-node {
-    background: #FFFFFF;
-    border: 1px solid #94A3B8;
-    border-radius: 8px;
-    padding: 12px;
-    min-width: 140px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    text-align: left;
+.dll-node,
+.node-card {
+    background: #FFFFFF !important;
+    border: 1.5px solid #00555a !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    min-width: 240px !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 4px 10px rgba(0, 85, 90, 0.08) !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
 }
 .dll-node-boundary {
-    border: 1px dashed #94A3B8;
-    color: #94A3B8;
+    border: 1px dashed #00555a !important;
+    color: #00555a !important;
     font-family: monospace;
     padding: 16px;
-    border-radius: 8px;
+    border-radius: 6px !important;
     text-align: center;
     min-width: 80px;
+    flex-shrink: 0 !important;
     font-size: 12px;
+    box-sizing: border-box !important;
 }
 .dll-arrow {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: #94A3B8;
-    font-size: 12px;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    color: #00555a !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
     user-select: none;
-    padding: 0 2px;
+    padding: 0 10px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
 }
 .badge-type {
     font-size: 10px;
     font-weight: 700;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 4px !important;
     float: right;
 }
 .badge-type.std { background-color: #E0F2FE; color: #0369A1; }
 .badge-type.reefer { background-color: #ECFDF5; color: #047857; }
-.badge-type.hazmat { background-color: #FEE2E2; color: #B91C1C; }
+.badge-type.hazmat { background-color: #ffc94b !important; color: #0f2527 !important; }
 .badge-type.oog { background-color: #FEF3C7; color: #B45309; }
+
+/* Dynamic node variations */
+.dll-node .text-tonelaje {
+    color: #0284c7 !important;
+}
+.nodo-alerta {
+    background-color: #ffffff !important;
+    border: 2px solid #ffc94b !important;
+    box-shadow: 0 4px 12px rgba(255, 201, 75, 0.15) !important;
+}
+.nodo-alerta .badge-type {
+    background-color: #ffc94b !important;
+    color: #0f2527 !important;
+    font-weight: bold !important;
+}
+.nodo-alerta .text-tonelaje {
+    color: #d97706 !important;
+}
 
 /* ==========================================================================
    LOADING SCREEN TRANSITIONS
@@ -2144,18 +2507,7 @@ select {
     font-weight: 700 !important;
 }
 
-/* Undo button styling */
-#btn-undo-action,
-#btn-audit-undo {
-    border: 2px solid #DC2626 !important;
-    color: #DC2626 !important;
-    background-color: transparent !important;
-    font-weight: 700 !important;
-}
-#btn-undo-action:hover,
-#btn-audit-undo:hover {
-    background-color: rgba(220, 38, 38, 0.08) !important;
-}
+
 
 /* =========================================================================
    3D BACKGROUND CANVAS — pointer-events guard
@@ -2253,13 +2605,15 @@ canvas#bg-3d-canvas {
     }
 }
 
-/* Workstation screens (>= 1200px): Native multi-column Bento layout */
+/* Workstation screens (>= 1200px): Grid exacto 2 columnas — Layout Figma Callao */
 @media (min-width: 1200px) {
     .dashboard-grid, [id*="main-layout"] {
-        grid-template-columns: 1.2fr 1fr !important; /* Optimal for Patio/Despacho vs Audit */
+        grid-template-columns: 1.15fr 1fr !important; /* Izq: Patio+Heatmap | Der: Despacho+FIFO */
         gap: 24px !important;
+        padding: 0 !important;
     }
 }
+
 
 /* Card width auto-readjustment */
 .bento-card,
@@ -2355,3 +2709,1156 @@ canvas#bg-3d-canvas {
         gap: 12px !important;
     }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ██████  PIXEL-PERFECT FIGMA OVERRIDES — LogiCore Puerto del Callao
+   ██████  Máxima especificidad. Debe estar al FINAL del archivo.
+   ██████  Double-class selector > single .kpi-card; !important rompe conflictos.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── HEADER Figma exacto ── */
+.lc-header.lc-header--callao {
+    background-color: #00555a !important;
+    border-bottom: 3px solid #ffc94b !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18) !important;
+}
+.lc-header.lc-header--callao *:not(.kpi-badge):not(.status-dot):not(.lc-header__port-badge) {
+    color: inherit;
+}
+
+/* ── Icono envolvente pequeño (top de cada card) ── */
+.kpi-card__icon-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+.kpi-card__icon-wrap--white {
+    background: rgba(255,255,255,0.18) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.30);
+}
+.kpi-card__icon-wrap--muted {
+    background: rgba(15,37,39,0.08) !important;
+    color: #0f2527 !important;
+    border: 1px solid rgba(15,37,39,0.12);
+}
+
+/* Fila top icon+badge para cards 2, 3, 4 */
+.kpi-card__top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+/* ══════════════════════════════════════════════════
+   KPI CARD BASE — reset para Figma (sin fondo grey)
+   ══════════════════════════════════════════════════ */
+.kpi-card.kpi-card--teal-solid,
+.kpi-card.kpi-card--mimosa-border,
+.kpi-card.kpi-card--white-bars,
+.kpi-card.kpi-card--mimosa-solid {
+    border-radius: 12px !important;
+    padding: 1.1rem 1.25rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    min-height: 152px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07) !important;
+    transition: transform 0.20s ease, box-shadow 0.20s ease !important;
+    overflow: hidden !important;
+}
+.kpi-card.kpi-card--teal-solid:hover,
+.kpi-card.kpi-card--mimosa-border:hover,
+.kpi-card.kpi-card--white-bars:hover,
+.kpi-card.kpi-card--mimosa-solid:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.12) !important;
+    border-color: inherit !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TARJETA 1 — CONTAINERS IN YARD
+   Fondo sólido #00555a, todo el texto blanco
+   ══════════════════════════════════════════════════ */
+.kpi-card.kpi-card--teal-solid {
+    background-color: #00555a !important;
+    border: none !important;
+    border-left: none !important;
+}
+.kpi-card.kpi-card--teal-solid::before,
+.kpi-card.kpi-card--teal-solid::after {
+    background: none !important;
+    border: none !important;
+    content: none !important;
+}
+/* Todos los hijos: texto blanco */
+.kpi-card.kpi-card--teal-solid .kpi-card__label,
+.kpi-card.kpi-card--teal-solid .kpi-card__sub {
+    color: rgba(255,255,255,0.68) !important;
+    font-size: 0.58rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+}
+.kpi-card.kpi-card--teal-solid .kpi-card__value {
+    color: #ffffff !important;
+    font-size: 2.6rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    margin: 4px 0 !important;
+}
+/* SVG trend line */
+.kpi-card.kpi-card--teal-solid .kpi-trend-line {
+    display: block !important;
+    width: 100% !important;
+    height: 30px !important;
+    margin: 6px 0 8px !important;
+    flex-shrink: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TARJETA 2 — TRUCKS IN QUEUE
+   Fondo #ffffff, borde perimetral 2px #ffc94b
+   ══════════════════════════════════════════════════ */
+.kpi-card.kpi-card--mimosa-border {
+    background-color: #ffffff !important;
+    border: 2px solid #ffc94b !important;
+}
+.kpi-card.kpi-card--mimosa-border::before,
+.kpi-card.kpi-card--mimosa-border::after {
+    background: none !important;
+    content: none !important;
+}
+.kpi-card.kpi-card--mimosa-border .kpi-card__label {
+    color: rgba(15,37,39,0.55) !important;
+    font-size: 0.58rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+}
+.kpi-card.kpi-card--mimosa-border .kpi-card__value {
+    color: #0f2527 !important;
+    font-size: 2.6rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    margin: 2px 0 6px !important;
+}
+.kpi-card.kpi-card--mimosa-border .kpi-card__mimosa-bar {
+    height: 10px !important;
+    border-radius: 5px !important;
+    background-color: #ffc94b !important;
+    width: 100% !important;
+    display: block !important;
+    margin: 0 0 8px !important;
+    flex-shrink: 0 !important;
+}
+.kpi-card.kpi-card--mimosa-border .kpi-card__sub {
+    color: rgba(15,37,39,0.45) !important;
+    font-size: 0.55rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+    margin-top: auto !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TARJETA 3 — AUDITED TRANSACTIONS
+   Fondo #ffffff, borde gris, barras teal
+   ══════════════════════════════════════════════════ */
+.kpi-card.kpi-card--white-bars {
+    background-color: #ffffff !important;
+    border: 1px solid #CBD5E1 !important;
+}
+.kpi-card.kpi-card--white-bars::before,
+.kpi-card.kpi-card--white-bars::after {
+    background: none !important;
+    content: none !important;
+}
+.kpi-card.kpi-card--white-bars .kpi-card__label {
+    color: rgba(15,37,39,0.55) !important;
+    font-size: 0.58rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+}
+.kpi-card.kpi-card--white-bars .kpi-card__value {
+    color: #0f2527 !important;
+    font-size: 2.6rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    margin: 2px 0 6px !important;
+}
+.kpi-card.kpi-card--white-bars .kpi-progress-bars {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100% !important;
+    margin: 0 0 8px !important;
+    flex-shrink: 0 !important;
+}
+.kpi-card.kpi-card--white-bars .kpi-pb-track {
+    width: 100% !important;
+    height: 6px !important;
+    background: rgba(0,85,90,0.10) !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+}
+.kpi-card.kpi-card--white-bars .kpi-pb-fill {
+    height: 100% !important;
+    border-radius: 4px !important;
+    display: block !important;
+}
+.kpi-card.kpi-card--white-bars .kpi-card__sub {
+    color: rgba(15,37,39,0.45) !important;
+    font-size: 0.55rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+    margin-top: auto !important;
+}
+
+/* ══════════════════════════════════════════════════
+   TARJETA 4 — HAZMAT IN QUEUE
+   Fondo sólido #ffc94b, texto oscuro #0f2527
+   ══════════════════════════════════════════════════ */
+.kpi-card.kpi-card--mimosa-solid {
+    background-color: #ffc94b !important;
+    border: none !important;
+    border-left: none !important;
+}
+.kpi-card.kpi-card--mimosa-solid::before,
+.kpi-card.kpi-card--mimosa-solid::after {
+    background: none !important;
+    content: none !important;
+}
+.kpi-card.kpi-card--mimosa-solid .kpi-card__label {
+    color: rgba(15,37,39,0.65) !important;
+    font-size: 0.58rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+}
+.kpi-card.kpi-card--mimosa-solid .kpi-card__value {
+    color: #0f2527 !important;
+    font-size: 2.6rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    margin: 2px 0 6px !important;
+}
+.kpi-card.kpi-card--mimosa-solid .kpi-hazmat-icon {
+    font-size: 1.3rem !important;
+    color: #0f2527 !important;
+    opacity: 0.75 !important;
+    display: block !important;
+    margin: 0 0 6px !important;
+    flex-shrink: 0 !important;
+}
+.kpi-card.kpi-card--mimosa-solid .kpi-card__sub {
+    color: rgba(15,37,39,0.55) !important;
+    font-size: 0.55rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.09em !important;
+    text-transform: uppercase !important;
+    margin-top: auto !important;
+}
+/* Badge ALERT en card mimosa: negro sobre mimosa */
+.kpi-card.kpi-card--mimosa-solid .kpi-badge--dark {
+    background: #0f2527 !important;
+    color: #ffffff !important;
+}
+
+/* ══════════════════════════════════════════════════
+   BADGES — Compartido entre cards 2 y 4
+   ══════════════════════════════════════════════════ */
+.kpi-badge.kpi-badge--dark {
+    background: #0f2527 !important;
+    color: #ffffff !important;
+    font-size: 0.55rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.10em !important;
+    text-transform: uppercase !important;
+    padding: 3px 10px !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   KPI GRID — Fila Flexbox perfecta
+   ══════════════════════════════════════════════════ */
+.kpi-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 1.1rem !important;
+    width: 100% !important;
+    align-items: stretch !important;
+    margin-bottom: 1.25rem !important;
+}
+.kpi-grid > .kpi-card {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+}
+@media (max-width: 900px) {
+    .kpi-grid {
+        flex-wrap: wrap !important;
+    }
+    .kpi-grid > .kpi-card {
+        flex: 1 1 calc(50% - 0.55rem) !important;
+    }
+}
+@media (max-width: 520px) {
+    .kpi-grid > .kpi-card {
+        flex: 1 1 100% !important;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════
+   FIGMA INDUSTRIAL CONTROLS REFIT OVERRIDES
+   ══════════════════════════════════════════════════ */
+
+.lc-main {
+  background-color: #f7f9fa !important;
+}
+
+/* Card container industrial style */
+.card-industrial {
+  background: #ffffff !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02) !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+.card-industrial__header {
+  padding: 14px 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+}
+
+.card-industrial__header--teal {
+  background: #00555a !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #004044 !important;
+}
+
+.card-industrial__header--mimosa {
+  background: #ffc94b !important;
+  color: #0f2527 !important;
+  border-bottom: 2px solid #e0b03b !important;
+}
+
+.card-industrial__header--simple {
+  background: #ffffff !important;
+  color: #0f2527 !important;
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.card-industrial__title {
+  display: flex !important;
+  align-items: center !important;
+  font-weight: 800 !important;
+}
+
+.card-industrial__body {
+  padding: 20px !important;
+  flex: 1 !important;
+}
+
+/* Desaturated input/select overrides */
+.lc-input.lc-input--desaturated {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f2527 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  padding: 10px 12px !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+}
+
+.lc-input.lc-input--desaturated:focus {
+  background-color: #ffffff !important;
+  border-color: #00555a !important;
+  box-shadow: 0 0 0 3px rgba(0, 85, 90, 0.1) !important;
+  outline: none !important;
+}
+
+/* Button overrides */
+.lc-btn.lc-btn--teal-solid {
+  background: #00555a !important;
+  color: #ffffff !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+  padding: 10px 20px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.lc-btn.lc-btn--teal-solid:hover {
+  background: #004044 !important;
+  transform: translateY(-1px) !important;
+}
+
+.lc-btn.lc-btn--mimosa-solid {
+  background: #ffc94b !important;
+  color: #0f2527 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+  padding: 10px 20px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.lc-btn.lc-btn--mimosa-solid:hover {
+  background: #e0b03b !important;
+  transform: translateY(-1px) !important;
+}
+
+.lc-btn--full {
+  width: 100% !important;
+}
+
+.yard-card-container {
+  overflow: hidden !important;
+  position: relative !important;
+  padding: 0 !important;
+}
+
+.yard-heatmap-header {
+  width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  padding: 12px 16px !important;
+}
+
+/* Yard Heatmap - Bay Overview */
+.yard-heatmap.yard-heatmap--figma {
+  display: grid !important;
+  grid-template-rows: repeat(5, 1fr) !important;    /* Estructura rígida para filas A, B, C, D, E */
+  grid-template-columns: repeat(6, 1fr) !important; /* Estructura rígida para columnas 1 a 6 */
+  gap: 8px !important;
+  background-color: #fdfbf7 !important;             /* Fondo beige suave idéntico al de la tarjeta */
+  padding: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.yard-heatmap.yard-heatmap--figma .hm-slot {
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(0, 85, 90, 0.18) !important;
+  background: rgba(0, 85, 90, 0.04) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: all 0.2s ease !important;
+}
+
+.yard-heatmap.yard-heatmap--figma .hm-slot:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 85, 90, 0.15) !important;
+  z-index: 10 !important;
+}
+
+.yard-heatmap.yard-heatmap--figma .hm-slot__num {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.02em !important;
+  position: static !important;
+  color: inherit !important;
+}
+
+.yard-heatmap.yard-heatmap--figma .hm-slot--full::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 4px !important;
+  width: 4px !important;
+  height: 4px !important;
+  background-color: #ffffff !important;
+  border-radius: 50% !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+/* High Density Table for Trucks in Waiting */
+.high-density-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.82rem !important;
+}
+
+.high-density-table thead {
+  background-color: #00555a !important;
+}
+
+.high-density-table th {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.05em !important;
+  padding: 10px 12px !important;
+  text-align: left !important;
+  border: none !important;
+}
+
+.high-density-table td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid #f0ede7 !important;
+  color: #334155 !important;
+  vertical-align: middle !important;
+}
+
+.high-density-table tbody tr {
+  background-color: #fdfbf7 !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.high-density-table tbody tr:hover {
+  background-color: #f5f2eb !important;
+}
+
+/* Table Responsive wrapper */
+.table-responsive {
+  width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* Alert badges for Cargo Type & Priority in the table */
+.badge-cargo {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  padding: 4px 10px !important;
+  border-radius: 9999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.badge-cargo--hazmat {
+  background-color: #ffc94b !important;
+  color: #0f2527 !important;
+  border: 1px solid #e0b03c !important;
+}
+
+.badge-cargo--reefer {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+.badge-cargo--dry {
+  background-color: rgba(70, 130, 180, 0.12) !important;
+  color: #2b5c8f !important;
+  border: 1px solid rgba(70, 130, 180, 0.28) !important;
+}
+
+.badge-priority {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  display: inline-flex !important;
+}
+
+.badge-priority--critical {
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca !important;
+}
+
+.badge-priority--normal {
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.badge-priority--low {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* Audit Log Linear Container */
+.audit-log-list {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+.audit-log-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 20px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background-color: #ffffff !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.audit-log-row:hover {
+  background-color: #f8fafc !important;
+}
+
+.audit-status-tag {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  text-transform: uppercase !important;
+  font-family: 'Inter', sans-serif !important;
+  min-width: 75px !important;
+  justify-content: center !important;
+}
+
+.audit-status-tag.status-dispatch {
+  background-color: #00555a !important;
+  color: #ffffff !important;
+}
+
+.audit-status-tag.status-enqueue {
+  background-color: #ffc94b !important;
+  color: #0f2527 !important;
+}
+
+.audit-status-tag.status-enter {
+  background-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.audit-status-tag.status-info {
+  background-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+.audit-status-tag.status-ingreso {
+  background-color: #d4e8eb !important;
+  color: #00555a !important;
+}
+
+.audit-status-tag.status-encolado,
+.audit-status-tag.status-despacho {
+  background-color: #ffc94b !important;
+  color: #0f2527 !important;
+}
+
+.audit-status-tag.status-deshacer {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE & ELONGATION OVERRIDE FIXES
+   ══════════════════════════════════════════════════ */
+
+/* Force body/html to stay inside the viewport */
+html, body {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Container centering and layout for header Callao */
+.lc-header--callao {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0 40px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 600px) {
+  .lc-header--callao {
+    padding: 0 1rem !important;
+  }
+}
+
+.lc-header__wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  max-width: 1440px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Allow main content container to scale fluidly without overflowing */
+.lc-main {
+  width: 100% !important;
+  max-width: 1440px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  padding: 24px 40px !important;
+}
+
+@media (max-width: 960px) {
+  .lc-main {
+    padding: 1rem !important;
+  }
+}
+
+/* Ensure CSS Grid and columns adapt elastically */
+.dashboard-grid, [id*="main-layout"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-column {
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.card-industrial {
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Fluid form components */
+.lc-form, .lc-field, .lc-input, select {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Table responsiveness safety */
+.table-responsive {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  box-sizing: border-box !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.high-density-table {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Yard Column Density & Color Refit Overrides */
+#yard-control-column .card-industrial {
+  background-color: #fdfbf7 !important;
+  border: 1px solid #e3dfd8 !important;
+}
+
+#yard-control-column .card-industrial__body {
+  padding: 16px !important;
+}
+
+#yard-control-column .card-industrial__header--simple {
+  background: #fdfbf7 !important;
+  border-bottom: 1px solid #e3dfd8 !important;
+}
+
+/* Compact inputs for desaturated controls */
+.lc-input.lc-input--desaturated {
+  padding: 6px 12px !important;
+}
+
+/* Compact Submit button for yard */
+#btn-yard-submit {
+  background: #00555a !important;
+  padding: 6px 16px !important;
+  font-size: 0.82rem !important;
+}
+
+/* Double Linked List container & overflow fixes */
+#linked-list-nodes-container,
+.nodes-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;          /* Mantiene todos los nodos estrictamente en una sola fila */
+  overflow-x: scroll !important;         /* Fuerza la activación del scroll de lectura horizontal */
+  overflow-y: hidden !important;         /* Bloquea el scroll vertical innecesario */
+  width: 100% !important;
+  padding: 16px 8px !important;          /* Colchón para evitar el corte de sombras externas */
+  gap: 16px !important;
+  box-sizing: border-box !important;
+}
+
+#yard-list-ida {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: max-content !important;
+}
+
+/* Estilización del Scrollbar (Industrial HUD) */
+#linked-list-nodes-container::-webkit-scrollbar,
+.nodes-container::-webkit-scrollbar {
+  height: 6px !important;
+}
+#linked-list-nodes-container::-webkit-scrollbar-thumb,
+.nodes-container::-webkit-scrollbar-thumb {
+  background: #ffc94b !important; /* Sincronizado con el color amarillo de la cabecera */
+  border-radius: 3px !important;
+}
+#linked-list-nodes-container::-webkit-scrollbar-track,
+.nodes-container::-webkit-scrollbar-track {
+  background: #fdfbf7 !important;
+}
+
+/* Heatmap Empty Cells */
+.yard-heatmap.yard-heatmap--figma .yard-cell-empty,
+.yard-heatmap.yard-heatmap--figma .hm-slot--empty {
+  background: #ffffff !important;
+  border: 1px solid #e3dfd8 !important;
+  color: #94a3b8 !important;
+}
+
+/* =========================================================================
+   UNIFIED FIGMA INDUSTRIAL THEME OVERRIDES (GEOMETRIC & CABECERAS)
+   ========================================================================= */
+
+/* 1. Global Geometric Flattening: Main block cards force rigid 6px corner radius */
+.card,
+.panel,
+.dashboard-item,
+.container-operaciones,
+.bento-card,
+.kpi-card,
+#yard-control-section,
+#dispatch-section,
+.card-industrial,
+#yard-entry-section,
+#yard-heatmap-section,
+#double-list-section,
+#dispatch-entry-section,
+#dispatch-queue-section,
+#audit-section,
+#audit-log-section {
+  border-radius: 6px !important;
+}
+
+/* Form inputs, text areas and buttons force 4px radius */
+.lc-input,
+.lc-select,
+.lc-field,
+input,
+select,
+textarea,
+button,
+.lc-btn,
+#btn-yard-submit,
+#btn-enqueue,
+#btn-dispatch-next,
+#btn-clear-alerts,
+#btn-list-ida,
+#btn-list-vuelta {
+  border-radius: 4px !important;
+}
+
+/* Card solid headers inherit the 6px top radius to avoid overlay spill */
+.card-industrial__header,
+.card-header,
+.yard-heatmap-header {
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* 2. Unification of Solid Mimosa Yellow Headers for bottom cards (Heatmap and DLL) */
+#yard-heatmap-section .card-industrial__header,
+#double-list-section .card-industrial__header {
+  width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  background: #ffc94b !important;
+  color: #0f2527 !important;
+  border-bottom: 2px solid #e0b03b !important;
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Ensure title text and internal labels inherit the dark color for high contrast */
+#yard-heatmap-section .card-industrial__header .card-industrial__title,
+#yard-heatmap-section .card-industrial__header .card-industrial__title i,
+#yard-heatmap-section .card-industrial__header .heatmap-legend,
+#yard-heatmap-section .card-industrial__header .heatmap-legend span,
+#double-list-section .card-industrial__header .card-industrial__title,
+#double-list-section .card-industrial__header .list-direction-toggle {
+  color: #0f2527 !important;
+}
+
+/* Style list travel toggle buttons inside Section B header to maintain dark theme styling */
+#double-list-section .card-industrial__header .list-direction-toggle button {
+  color: #0f2527 !important;
+  border-color: rgba(15, 37, 39, 0.4) !important;
+}
+
+#double-list-section .card-industrial__header .list-direction-toggle button.active {
+  background-color: #0f2527 !important;
+  color: #ffffff !important;
+  border-color: #0f2527 !important;
+}
+
+/* 3. Exclusive Amarillo Mimosa: Redirect dispatch & audit headers to Teal style */
+#dispatch-entry-section .card-industrial__header, 
+#audit-log-section .card-industrial__header {
+    background-color: #eab308 !important; /* Amarillo Mimosa / Dorado Operativo */
+    color: #0f172a !important; /* Texto Oscuro Industrial */
+    border-bottom: 2px solid #e0b03b !important;
+    border-top-left-radius: 6px !important;
+    border-top-right-radius: 6px !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Forzar los títulos internos h2 o h3 y elementos de texto */
+#dispatch-entry-section .card-industrial__header h2,
+#dispatch-entry-section .card-industrial__header h3,
+#audit-log-section .card-industrial__header h2,
+#audit-log-section .card-industrial__header h3,
+#audit-log-section .card-industrial__header .panel-title,
+#dispatch-entry-section .card-industrial__header .card-industrial__title,
+#dispatch-entry-section .card-industrial__header .card-industrial__title i,
+#audit-log-section .card-industrial__header .card-industrial__title,
+#audit-log-section .card-industrial__header .card-industrial__title i {
+    color: #0f172a !important;
+}
+
+
+/* =========================================================================
+   4. SCROLL HORIZONTAL Y PROTECCIÓN DE TARJETAS (SECCIÓN B)
+   ========================================================================= */
+
+/* Configuración del Contenedor de la Lista */
+#linked-list-nodes-container,
+.nodes-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;        /* Forzar una sola línea horizontal sin saltos */
+  overflow-x: auto !important;         /* Activar scroll horizontal automático */
+  overflow-y: hidden !important;       /* Bloquear desbordamiento vertical */
+  width: 100% !important;
+  padding: 16px 8px !important;        /* Margen interno para que no se recorten las sombras de Figma */
+  box-sizing: border-box !important;
+  gap: 16px !important;
+}
+
+/* Blindaje Estructural de la Tarjeta del Nodo */
+.dll-node,
+.node-card {
+  min-width: 240px !important;        /* Ancho fijo mínimo para mantener la geometría de Figma */
+  flex-shrink: 0 !important;          /* PROPIEDAD CRÍTICA: Evita que el contenedor reduzca el tamaño del nodo */
+  box-sizing: border-box !important;
+}
+
+/* Estilización de la Barra de Desplazamiento (Scrollbar Industrial) */
+.nodes-container::-webkit-scrollbar {
+  height: 6px !important;
+}
+
+.nodes-container::-webkit-scrollbar-thumb {
+  background: #ffc94b !important;     /* Sincronizado con el Amarillo Mimosa de la cabecera */
+  border-radius: 3px !important;
+}
+
+.nodes-container::-webkit-scrollbar-track {
+  background: #fdfbf7 !important;     /* Fondo neutro de la tarjeta */
+}
+
+/* =========================================================================
+   5. AUDIT BADGES COLOR REFITTING
+   ========================================================================= */
+
+.audit-badge {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  text-transform: uppercase !important;
+  font-family: 'Inter', sans-serif !important;
+  min-width: 75px !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+/* INGRESO: Fondo Teal Claro (#d4e8eb), Texto Teal Oscuro (#00555a) */
+.audit-badge.ingreso {
+  background-color: #d4e8eb !important;
+  color: #00555a !important;
+}
+
+/* ENCOLADO y DESPACHO: Fondo Amarillo Suave (#fff0ca), Texto Oscuro (#0f2527) */
+.audit-badge.encolado,
+.audit-badge.despacho {
+  background-color: #fff0ca !important;
+  color: #0f2527 !important;
+}
+
+/* DESHACER: Fondo Rojo Pálido (#fce8e6), Texto Rojo Oscuro (#a80000) */
+.audit-badge.deshacer {
+  background-color: #fce8e6 !important;
+  color: #a80000 !important;
+}
+
+/* ==========================================================================
+   RESTORED HUD HEADER COLORS & BADGES
+   ========================================================================== */
+/* PANEL INGRESO DE CONTENEDORES (PATIO) -> COLOR TEAL */
+#yard-status-section .card-industrial__header,
+.theme-teal .card-industrial__header {
+    background-color: var(--color-teal-dark) !important; /* Teal Base */
+    color: #ffffff !important;
+}
+
+/* PANELES DE DESPACHO Y AUDITORÍA -> COLOR AMARILLO MIMOSA */
+#dispatch-entry-section .card-industrial__header, 
+#audit-log-section .card-industrial__header,
+.theme-mimosa .card-industrial__header {
+    background-color: var(--color-mimosa) !important; /* Amarillo Mimosa Real */
+    color: var(--color-industrial-dark) !important; /* Texto oscuro para legibilidad */
+}
+
+/* Títulos internos de los paneles Mimosa */
+#dispatch-entry-section .card-industrial__header h2,
+#dispatch-entry-section .card-industrial__header h3,
+#audit-log-section .card-industrial__header h2,
+#audit-log-section .card-industrial__header h3 {
+    color: var(--color-industrial-dark) !important;
+}
+
+#audit-log-section .card-industrial__title {
+    font-family: var(--font-base) !important;
+    font-weight: 800 !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+}
+
+/* =======================================================
+   BEM — BLOQUE audit-controls (Cabecera del Log de Auditoría)
+   ======================================================= */
+
+/* BLOQUE: Contenedor de controles de la cabecera */
+.audit-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ELEMENTO: Botón DESHACER */
+.audit-controls__btn-undo {
+    background-color: var(--color-critico-light);
+    color: var(--color-critico-dark);
+    border: 1px solid #fecaca;
+    border-radius: 9999px;
+    padding: 2px 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 4px rgba(185, 28, 28, 0.15);
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.audit-controls__btn-undo * {
+    color: var(--color-critico-dark);
+}
+
+.audit-controls__btn-undo:hover {
+    background-color: #fecaca;
+    color: #991b1b;
+    box-shadow: 0 4px 6px rgba(185, 28, 28, 0.25);
+    transform: translateY(-1px);
+}
+
+.audit-controls__btn-undo:hover * {
+    color: #991b1b;
+}
+
+/* ELEMENTO: Etiqueta PILA LIFO */
+.audit-controls__badge-lifo {
+    background-color: var(--color-industrial-dark);
+    color: #ffffff;
+    border: 1px solid var(--color-industrial-dark);
+    border-radius: 9999px;
+    padding: 2px 10px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+/* ELEMENTO: Contador numérico */
+.audit-controls__counter {
+    background-color: var(--color-industrial-dark);
+    color: var(--color-mimosa);
+    border: 1px solid var(--color-mimosa);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: inline-block;
+}
+
+

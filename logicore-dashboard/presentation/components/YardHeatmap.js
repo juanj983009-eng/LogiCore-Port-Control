@@ -21,7 +21,7 @@ const YardHeatmap = {
      * Render or update the heatmap grid.
      * Performs O(1) selector lookup per slot instead of wiping innerHTML.
      */
-    render(gridElement, contenedores, totalSlotsCapacity = 50) {
+    render(gridElement, contenedores, totalSlotsCapacity = 30) {
         if (!gridElement) return;
 
         const ocupados = contenedores.length;
@@ -35,11 +35,15 @@ const YardHeatmap = {
         if (hmFree)     hmFree.textContent     = Math.max(0, totalSlots - ocupados);
         if (hmCapacity) hmCapacity.textContent = totalSlots;
 
-        // Perform minimum reconciliation per slot
-        for (let i = 0; i < totalSlots; i++) {
-            const isOcupad = i < ocupados;
-            const c = contenedores[i]; // Undefined if slot is empty
-            const slotId = `yard-slot-${i}`;
+        const filas = ['A', 'B', 'C', 'D', 'E'];
+        const columnas = [1, 2, 3, 4, 5, 6];
+        const overflowRows = ['F', 'G', 'H', 'I', 'J'];
+
+        const renderSlot = (idx, rowChar, colNum) => {
+            const isOcupad = idx < ocupados;
+            const c = contenedores[idx]; // Undefined if slot is empty
+            const slotId = `yard-slot-${idx}`;
+            const bayCode = rowChar + colNum;
             let slot = document.getElementById(slotId);
 
             // 1. If slot does not exist, create it and append to grid
@@ -48,10 +52,10 @@ const YardHeatmap = {
                 slot.id = slotId;
                 slot.setAttribute("role", "gridcell");
                 
-                // Number label
+                // Centered bay code label
                 const numEl = document.createElement("span");
                 numEl.className = "hm-slot__num";
-                numEl.textContent = i + 1;
+                numEl.textContent = bayCode;
                 numEl.setAttribute("aria-hidden", "true");
                 slot.appendChild(numEl);
 
@@ -92,64 +96,77 @@ const YardHeatmap = {
                 gridElement.appendChild(slot);
             }
 
-            // 2. Reconcile states & classes \u2014 weight-proportional intensity on occupied slots
-            const expectedClass = "hm-slot " + (isOcupad ? "hm-slot--occupied" : "hm-slot--empty");
+            // 2. Reconcile states & classes
+            const isFull = isOcupad && (idx >= 4);
+            const expectedClass = "hm-slot " + 
+                                  (isOcupad ? "hm-slot--occupied" : "hm-slot--empty yard-cell-empty") +
+                                  (isFull ? " hm-slot--full" : "");
             if (slot.className !== expectedClass) {
                 slot.className = expectedClass;
             }
 
-            // Drive visual intensity from container weight (ContenedorResponseDTO.peso).
-            // Clamp: 0 Tn \u2192 0.18 base opacity, 50+ Tn \u2192 1.0 full saturation.
-            if (isOcupad) {
-                const pesoVal  = Math.max(0, parseFloat(c.peso) || 0);
-                const pesoMax  = 50; // operational ceiling in metric tons
-                const ratio    = Math.min(pesoVal / pesoMax, 1.0);
-                const alphaFill   = (0.14 + ratio * 0.42).toFixed(3);   // 0.14 – 0.56
-                const alphaBorder = (0.28 + ratio * 0.48).toFixed(3);   // 0.28 – 0.76
-                slot.style.setProperty("--hm-fill-alpha",   alphaFill);
-                slot.style.setProperty("--hm-border-alpha", alphaBorder);
-                slot.style.setProperty("background", `rgba(8, 145, 178, ${alphaFill})`, "important");
-                slot.style.setProperty("border-color", `rgba(8, 145, 178, ${alphaBorder})`, "important");
-            } else {
-                // Clear weight-driven inline styles on empty slots
-                slot.style.removeProperty("--hm-fill-alpha");
-                slot.style.removeProperty("--hm-border-alpha");
-                slot.style.setProperty("background", "#F1F5F9", "important");
-                slot.style.setProperty("border-color", "#94A3B8", "important");
+            // Ensure slot text content is correct
+            const numEl = slot.querySelector(".hm-slot__num");
+            if (numEl && numEl.textContent !== bayCode) {
+                numEl.textContent = bayCode;
             }
 
-            // 3. Reconcile tooltips and box icon
+            // Drive visual intensity from occupancy
+            if (isOcupad) {
+                const levels = {
+                    1: { bg: "#d4e8eb", color: "#004d51", border: "#a6d3d9" },
+                    2: { bg: "#7bb4bc", color: "#ffffff", border: "#62a0a9" },
+                    3: { bg: "#5ca2ac", color: "#ffffff", border: "#468e99" },
+                    4: { bg: "#39818a", color: "#ffffff", border: "#2d6f77" },
+                    5: { bg: "#00555a", color: "#ffffff", border: "#004044" }
+                };
+                const level = Math.min(idx + 1, 5);
+                const config = levels[level];
+                slot.style.setProperty("background",   config.bg,     "important");
+                slot.style.setProperty("border-color", config.border, "important");
+                slot.style.setProperty("color",        config.color,  "important");
+            } else {
+                slot.style.setProperty("background",   "#ffffff",                  "important");
+                slot.style.setProperty("border-color", "#e3dfd8",                  "important");
+                slot.style.setProperty("color",        "#94a3b8",                  "important");
+            }
+
+            // 3. Reconcile tooltips
             if (isOcupad) {
                 const tooltipText = `ID: ${c.codigoId}\n📍 Destino: ${c.destino}\n⚖️ Peso: ${(+c.peso).toFixed(1)} Tn\n⚡ Prioridad: ${c.prioridad}`;
                 if (slot.getAttribute("data-tooltip") !== tooltipText) {
                     slot.setAttribute("data-tooltip", tooltipText);
                     slot.classList.add("has-tooltip");
                 }
-                
-                // Ensure box icon exists
-                if (!slot.querySelector(".hm-slot__icon")) {
-                    const iconEl = document.createElement("i");
-                    iconEl.className = "fa-solid fa-box hm-slot__icon";
-                    iconEl.setAttribute("aria-hidden", "true");
-                    slot.appendChild(iconEl);
-                }
             } else {
                 if (slot.hasAttribute("data-tooltip")) {
                     slot.removeAttribute("data-tooltip");
                     slot.classList.remove("has-tooltip");
                 }
-                // Remove box icon if it exists
-                const icon = slot.querySelector(".hm-slot__icon");
-                if (icon) {
-                    icon.remove();
-                }
             }
 
             // Accessibility label reconciliation
-            const expectedAria = isOcupad ? `Slot ${i + 1}: ${c.codigoId} → ${c.destino}` : `Slot ${i + 1}: libre`;
+            const expectedAria = isOcupad ? `Slot ${bayCode}: ${c.codigoId} → ${c.destino}` : `Slot ${bayCode}: libre`;
             if (slot.getAttribute("aria-label") !== expectedAria) {
                 slot.setAttribute("aria-label", expectedAria);
             }
+        };
+
+        // Render standard 5x6 grid (30 slots) unconditionally
+        let i = 0;
+        for (const rowChar of filas) {
+            for (const colNum of columnas) {
+                renderSlot(i, rowChar, colNum);
+                i++;
+            }
+        }
+
+        // Render overflow slots if occupied containers exceeds 30
+        for (; i < totalSlots; i++) {
+            const rowIndex = Math.floor(i / 6);
+            const colIndex = (i % 6) + 1;
+            const rowChar = (rowIndex < 5) ? filas[rowIndex] : (overflowRows[rowIndex - 5] || "Z");
+            renderSlot(i, rowChar, colIndex);
         }
 
         // 4. Prune extra slots if totalSlots capacity decreased

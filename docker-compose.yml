@@ -79,8 +79,8 @@ services:
   audit-service:
     container_name: audit-history-service
     build:
-      context: "./audit-history-service/audit-history-service"
-      dockerfile: Dockerfile
+      context: "."
+      dockerfile: "audit-history-service/Dockerfile"
     restart: always
     ports:
       - "8083:8083"
@@ -104,8 +104,8 @@ services:
   yard-service:
     container_name: inbound-yard-service
     build:
-      context: "./inbound-yard-service/inbound-yard-service"
-      dockerfile: Dockerfile
+      context: "."
+      dockerfile: "inbound-yard-service/Dockerfile"
     restart: always
     ports:
       - "8081:8081"
@@ -130,8 +130,8 @@ services:
   dispatch-service:
     container_name: dispatch-queue-service
     build:
-      context: "./dispatch-queue-service/dispatch-queue-service"
-      dockerfile: Dockerfile
+      context: "."
+      dockerfile: "dispatch-queue-service/Dockerfile"
     restart: always
     ports:
       - "8082:8082"
@@ -140,6 +140,7 @@ services:
       SPRING_DATASOURCE_USERNAME: sa
       SPRING_DATASOURCE_PASSWORD: ${DB_SQLSERVER_SA_PASSWORD}
       APP_SERVICES_AUDIT_URL: http://audit-service:8083/api/v1/audit/logs
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx192m"
     depends_on:
       dispatch-db:
         condition: service_healthy
@@ -150,7 +151,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
 
 # =========================================================================
 # 🌐  NETWORKS & PERSISTENCE VOLUMES

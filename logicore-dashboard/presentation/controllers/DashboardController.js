@@ -80,56 +80,70 @@ const DashboardController = {
     async init() {
         console.log("[DashboardController] Initializing Presentation Layer v2...");
         
-        // 1. Initial parallel fetch
-        await this.reloadData();
-
-        // 2. Bind Event Listeners with safety harness
-        this.bindEvents();
-
-        // 3. Hide loading screen immediately after Promise.all resolves
-        const splash = document.getElementById('splash-screen');
-        if (splash) {
-            splash.classList.add('hidden');
-            splash.classList.add('splash-hidden');
-        }
-    },
-
-    async reloadData() {
-        // Run in parallel
-        await Promise.all([
-            this.loadYard(),
-            this.loadDispatch(),
-            this.loadAudit()
-        ]);
-    },
-
-    async loadYard() {
-        const grid = document.getElementById("yard-heatmap");
-        const list = document.getElementById("yard-list-ida");
-        try {
-            const containers = await this.getClient().getYardContainers("view");
-            state.yard.data = containers;
-
+        // Subscribe observers to the Store for reactive UI rendering
+        Store.subscribe("yard_changed", (containers) => {
+            const grid = document.getElementById("yard-heatmap");
+            const list = document.getElementById("yard-list-ida");
             this.renderYardList(containers, list);
             this.getHeatmap().render(grid, containers);
             if (typeof window !== 'undefined' && window.DoubleLinkedListComponent) {
                 window.DoubleLinkedListComponent.render(containers);
             }
+            actualizarKPIs();
+        });
+
+        Store.subscribe("dispatch_changed", () => {
+            renderizarColaDespacho();
+            actualizarGrafico();
+            actualizarKPIs();
+        });
+
+        Store.subscribe("audit_changed", (logs) => {
+            if (window.rebuildPilaAuditoria) {
+                window.rebuildPilaAuditoria(logs);
+            }
+            renderizarAuditoria();
+            actualizarKPIs();
+        });
+
+        // Render empty heatmap immediately to avoid blank space on startup
+        const grid = document.getElementById("yard-heatmap");
+        if (grid) {
+            this.getHeatmap().render(grid, []);
+        }
+
+        // 1. Initial parallel fetch
+        await this.reloadData();
+
+        // 2. Bind Event Listeners with safety harness
+        this.bindEvents();
+    },
+
+    async reloadData(silent = false) {
+        // Run in parallel
+        await Promise.all([
+            this.loadYard(silent),
+            this.loadDispatch(silent),
+            this.loadAudit(silent)
+        ]);
+    },
+
+    async loadYard(silent = false) {
+        try {
+            const containers = await YardService.obtenerEstadoPatio();
+            Store.updateYard(containers);
         } catch (error) {
             console.error("[DashboardController] Error loading Yard:", error);
-            state.yard.data = [];
-            this.getHeatmap().render(grid, []);
-            if (typeof window !== 'undefined' && window.DoubleLinkedListComponent) {
-                window.DoubleLinkedListComponent.render([]);
-            }
+            Store.updateYard([]);
+            const list = document.getElementById("yard-list-ida");
             if (list) list.innerHTML = crearEmptyState("fa-warehouse", "Patio listo · Lista Doble en espera");
-            actualizarKPIs();
         }
     },
 
     renderYardList(containers, listElement) {
         if (!listElement) return;
-        document.getElementById("yard-count").textContent = containers.length;
+        const yardCountEl = document.getElementById("yard-count");
+        if (yardCountEl) yardCountEl.textContent = containers.length;
 
         if (containers.length === 0) {
             listElement.innerHTML = crearEmptyState("fa-boxes-stacked", "Patio vacío. Sin contenedores asignados.");
@@ -163,31 +177,23 @@ const DashboardController = {
         actualizarKPIs();
     },
 
-    async loadDispatch() {
+    async loadDispatch(silent = false) {
         try {
-            const trucks = await this.getClient().getDispatchTrucks();
-            state.dispatch.data = trucks;
-            renderizarColaDespacho();
-            this._animeList('#dispatch-list');
-            actualizarGrafico();
+            const trucks = await DispatchService.obtenerCola();
+            Store.updateDispatch(trucks);
         } catch (error) {
             console.error("[DashboardController] Error loading Dispatch:", error);
-            state.dispatch.data = [];
-            renderizarColaDespacho();
-            actualizarGrafico();
+            Store.updateDispatch([]);
         }
     },
 
-    async loadAudit() {
+    async loadAudit(silent = false) {
         try {
-            const logs = await this.getClient().getAuditLogs();
-            state.audit.data = logs;
-            renderizarAuditoria();
-            this._animeList('#audit-list');
+            const logs = await ApiClient.getAuditLogs();
+            Store.updateAudit(logs);
         } catch (error) {
             console.error("[DashboardController] Error loading Audit:", error);
-            state.audit.data = [];
-            renderizarAuditoria();
+            Store.updateAudit([]);
         }
     },
 
@@ -203,14 +209,14 @@ const DashboardController = {
                     
                     // Style toggle
                     btnListIda.classList.add("active");
-                    btnListIda.style.backgroundColor = "#0F172A";
-                    btnListIda.style.color = "#FFFFFF";
-                    btnListIda.style.borderColor = "#0F172A";
+                    btnListIda.style.backgroundColor = "#0f2527";
+                    btnListIda.style.color = "#ffffff";
+                    btnListIda.style.borderColor = "#0f2527";
                     
                     btnListVuelta.classList.remove("active");
-                    btnListVuelta.style.backgroundColor = "#FFFFFF";
-                    btnListVuelta.style.color = "#475569";
-                    btnListVuelta.style.borderColor = "#E2E8F0";
+                    btnListVuelta.style.backgroundColor = "transparent";
+                    btnListVuelta.style.color = "#0f2527";
+                    btnListVuelta.style.borderColor = "rgba(15,37,39,0.3)";
                     
                     // Metadata updates
                     const viewTitle = document.getElementById("list-view-title");
@@ -230,14 +236,14 @@ const DashboardController = {
                     
                     // Style toggle
                     btnListVuelta.classList.add("active");
-                    btnListVuelta.style.backgroundColor = "#0F172A";
-                    btnListVuelta.style.color = "#FFFFFF";
-                    btnListVuelta.style.borderColor = "#0F172A";
+                    btnListVuelta.style.backgroundColor = "#0f2527";
+                    btnListVuelta.style.color = "#ffffff";
+                    btnListVuelta.style.borderColor = "#0f2527";
                     
                     btnListIda.classList.remove("active");
-                    btnListIda.style.backgroundColor = "#FFFFFF";
-                    btnListIda.style.color = "#475569";
-                    btnListIda.style.borderColor = "#E2E8F0";
+                    btnListIda.style.backgroundColor = "transparent";
+                    btnListIda.style.color = "#0f2527";
+                    btnListIda.style.borderColor = "rgba(15,37,39,0.3)";
                     
                     // Metadata updates
                     const viewTitle = document.getElementById("list-view-title");
@@ -274,18 +280,59 @@ const DashboardController = {
                 };
 
                 try {
-                    const res = await this.getClient().postContainer(containerData);
+                    const res = await YardService.ingresarAlPatio(containerData);
                     if (res.ok) {
                         newForm.reset();
-                        await this.reloadData();
+                        
+                        // 1. Inyección reactiva a través del Store
+                        const updatedYard = [...Store.getState().yard.data, containerData];
+                        Store.updateYard(updatedYard);
+                        
+                        const idx = updatedYard.length - 1;
+                        const rowChar = ["A", "B", "C", "D", "E"][Math.floor(idx / 6)] || "A";
+                        const colNum = (idx % 6) + 1;
+                        const bayCode = rowChar + colNum;
+                        const detalleText = `Bahía ${bayCode} — ${containerData.destino || 'APM Terminals'}`;
+                        
+                        const enrichedLog = {
+                            accion: "INGRESO",
+                            lote: containerData.codigoId,
+                            detalle: detalleText,
+                            hora: obtenerHoraPeruana()
+                        };
+                        if (window.pilaAuditoria && window.pilaAuditoria.push) {
+                            window.pilaAuditoria.push(enrichedLog);
+                        }
+
+                        const mockLog = {
+                            idLog: "mock-" + Date.now(),
+                            tipoAccion: "INGRESAR CONTENEDOR",
+                            microservicio: "inbound-yard-service",
+                            payload: JSON.stringify(containerData),
+                            fechaRegistro: new Date().toISOString()
+                        };
+                        
+                        const updatedAudit = [mockLog, ...Store.getState().audit.data];
+                        Store.updateAudit(updatedAudit);
+
+                        if (window.inyectarFilaAuditoriaInmediata) {
+                            window.inyectarFilaAuditoriaInmediata(mockLog);
+                        }
+
+                        // 2. Recargar de fondo para asegurar sincronización
+                        await this.loadAudit();
+                        this.reloadData(true);
+                        
                         showToast("success", "Contenedor Ingresado", `${containerData.codigoId} → ${containerData.destino}`);
                     } else {
                         const msg = await res.text();
                         showToast("warning", "Aviso del Patio", msg);
+                        shakeForm(newForm);
                     }
                 } catch (error) {
                     console.error("[DashboardController] Error POST Yard:", error);
                     showToast("error", error.message.includes("[Compilation Block Alert]") ? "Error de Validación" : "Sin Conexión", error.message);
+                    shakeForm(newForm);
                 } finally {
                     setLoadingState(btn, false);
                 }
@@ -301,24 +348,76 @@ const DashboardController = {
 
             newForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
+
+                const placaVal = document.getElementById("dispatch-placa").value.trim();
+                const conductorVal = document.getElementById("dispatch-conductor").value.trim();
+                const tipoCargaVal = document.getElementById("dispatch-carga").value;
+                const prioridadVal = document.getElementById("dispatch-prioridad").value;
+
+                if (!placaVal || !conductorVal || tipoCargaVal === "" || prioridadVal === "") {
+                    showToast("error", "Campos Incompletos", "Error: Todos los campos del camión son obligatorios.");
+                    shakeForm(newForm);
+                    return;
+                }
+
+                // RegEx para placa peruana: 3 alfanuméricos, guion opcional, 3 números (ej: ABC-123 o A1F-942)
+                const regexPlaca = /^[A-Z0-9]{3}-?\d{3}$/i;
+                if (!regexPlaca.test(placaVal)) {
+                    showToast("error", "Formato de Placa Inválido", "La placa debe tener 3 caracteres alfanuméricos, un guion opcional y 3 números (ej: ABC-123 o A1F-942).");
+                    shakeForm(newForm);
+                    return;
+                }
+
                 if (!this.acquireLock()) return;
 
                 const btn = document.getElementById("btn-enqueue");
                 setLoadingState(btn, true);
 
                 const truckData = {
-                    placa:          document.getElementById("dispatch-placa").value.trim().toUpperCase(),
-                    conductor:      document.getElementById("dispatch-conductor").value.trim(),
-                    tipoCarga:      document.getElementById("dispatch-carga").value.trim().toUpperCase(),
-                    ordenPrioridad: parseInt(document.getElementById("dispatch-prioridad").value) || 1
+                    placa:          placaVal.toUpperCase(),
+                    conductor:      conductorVal,
+                    tipoCarga:      tipoCargaVal.toUpperCase(),
+                    ordenPrioridad: parseInt(prioridadVal) || 1
                 };
 
                 try {
-                    const res = await repository.registrarCamionEnCola(truckData);
+                    const res = await DispatchService.encolarCamion(truckData);
                     if (res.ok) {
                         newForm.reset();
-                        state.dispatch.page = 0;
-                        await this.reloadData();
+                        Store.setDispatchPage(0);
+                        
+                        // 1. Inyección reactiva a través del Store
+                        const updatedDispatch = [...Store.getState().dispatch.data, truckData];
+                        Store.updateDispatch(updatedDispatch);
+                        
+                        const enrichedLog = {
+                            accion: "ENCOLADO",
+                            lote: truckData.placa,
+                            detalle: `Conductor: ${truckData.conductor}`,
+                            hora: obtenerHoraPeruana()
+                        };
+                        if (window.pilaAuditoria && window.pilaAuditoria.push) {
+                            window.pilaAuditoria.push(enrichedLog);
+                        }
+
+                        const mockLog = {
+                            idLog: "mock-" + Date.now(),
+                            tipoAccion: "ENCOLAR CAMION",
+                            microservicio: "dispatch-queue-service",
+                            payload: JSON.stringify(truckData),
+                            fechaRegistro: new Date().toISOString()
+                        };
+                        
+                        const updatedAudit = [mockLog, ...Store.getState().audit.data];
+                        Store.updateAudit(updatedAudit);
+
+                        if (window.inyectarFilaAuditoriaInmediata) {
+                            window.inyectarFilaAuditoriaInmediata(mockLog);
+                        }
+
+                        // 2. Recargar de fondo
+                        await this.loadAudit();
+                        this.reloadData(true);
 
                         if (truckData.tipoCarga === "HAZMAT" || truckData.ordenPrioridad === 1) {
                             registrarAlerta("ENCOLADO", truckData);
@@ -327,10 +426,12 @@ const DashboardController = {
                     } else {
                         const msg = await res.text();
                         showToast("error", "Error Operativo", msg);
+                        shakeForm(newForm);
                     }
                 } catch (error) {
                     console.error("[DashboardController] Error POST Dispatch:", error);
                     showToast("error", error.message.includes("[Compilation Block Alert]") ? "Error de Validación" : "Sin Conexión", error.message);
+                    shakeForm(newForm);
                 } finally {
                     setLoadingState(btn, false);
                 }
@@ -348,22 +449,54 @@ const DashboardController = {
                 setLoadingState(newBtn, true);
 
                 try {
-                    const res = await this.getClient().deleteNextTruck();
-                    if (res.status === 404) {
-                        showToast("warning", "Cola Vacía", "No existen camiones en la cola de espera.");
-                        return;
+                    const res = await DispatchService.despacharSiguiente();
+                    const atendido = await res.json();
+                    
+                    // 1. Inyección reactiva a través del Store
+                    const updatedDispatch = [...Store.getState().dispatch.data];
+                    updatedDispatch.shift();
+                    Store.updateDispatch(updatedDispatch);
+                    
+                    const enrichedLog = {
+                        accion: "DESPACHO",
+                        lote: atendido.placa,
+                        detalle: `Conductor: ${atendido.conductor}`,
+                        hora: obtenerHoraPeruana()
+                    };
+                    if (window.pilaAuditoria && window.pilaAuditoria.push) {
+                        window.pilaAuditoria.push(enrichedLog);
                     }
-                    if (res.ok) {
-                        const atendido = await res.json();
-                        if ((atendido.tipoCarga || "").toUpperCase() === "HAZMAT" || atendido.ordenPrioridad === 1) {
-                            registrarAlerta("DESPACHADO", atendido);
-                        }
-                        await this.reloadData();
-                        showToast("info", "Camión Despachado", `Placa: ${atendido.placa} · Conductor: ${atendido.conductor}`);
+
+                    const mockLog = {
+                        idLog: "mock-" + Date.now(),
+                        tipoAccion: "DESPACHAR CAMION",
+                        microservicio: "dispatch-queue-service",
+                        payload: JSON.stringify(atendido),
+                        fechaRegistro: new Date().toISOString()
+                    };
+                    
+                    const updatedAudit = [mockLog, ...Store.getState().audit.data];
+                    Store.updateAudit(updatedAudit);
+
+                    if (window.inyectarFilaAuditoriaInmediata) {
+                        window.inyectarFilaAuditoriaInmediata(mockLog);
                     }
+
+                    // 2. Recargar de fondo
+                    await this.loadAudit();
+                    this.reloadData(true);
+
+                    if ((atendido.tipoCarga || "").toUpperCase() === "HAZMAT" || atendido.ordenPrioridad === 1) {
+                        registrarAlerta("DESPACHADO", atendido);
+                    }
+                    showToast("info", "Camión Despachado", `Placa: ${atendido.placa} · Conductor: ${atendido.conductor}`);
                 } catch (error) {
-                    console.error("[DashboardController] Error Dispatch Next:", error);
-                    showToast("error", "Sin Conexión", "Error al despachar el camión.");
+                    if (error.status === 404) {
+                        showToast("warning", "Cola Vacía", error.message);
+                    } else {
+                        console.error("[DashboardController] Error Dispatch Next:", error);
+                        showToast("error", "Sin Conexión", error.message || "Error al despachar el camión.");
+                    }
                 } finally {
                     setLoadingState(newBtn, false);
                 }
@@ -377,30 +510,102 @@ const DashboardController = {
             btnAuditUndo.parentNode.replaceChild(newBtn, btnAuditUndo);
 
             newBtn.addEventListener("click", async () => {
-                if (!this.acquireLock()) return;
+                if (window.isAuditLogLocked) {
+                    console.warn("[DashboardController] Operación de Undo bloqueada por exclusión mutua.");
+                    return;
+                }
+
+                if (!newBtn || newBtn.disabled) return;
+
+                if (state.audit.data.length === 0) {
+                    newBtn.disabled = true;
+                    showToast("warning", "Pila Vacía", "No quedan acciones por revertir en la Pila LIFO.");
+                    return;
+                }
+
+                window.isAuditLogLocked = true;
                 setLoadingState(newBtn, true);
 
                 try {
-                    const res = await this.getClient().postUndo();
-                    if (res.status === 404) {
-                        showToast("warning", "Pila Vacía", "No quedan acciones por revertir en la Pila LIFO.");
-                        return;
+                    const log = await AuditService.undoLastAction();
+                    
+                    // Revertir a nivel de negocio
+                    const tipo = (log.tipoAccion || "").toUpperCase();
+                    let revertExito = false;
+                    let revertDetalle = "";
+
+                    try {
+                        const payloadObj = JSON.parse(log.payload);
+                        if (tipo.includes("ENCOLAR")) {
+                            if (payloadObj.placa) {
+                                const resDel = await DispatchService.eliminarCamion(payloadObj.placa);
+                                revertExito = resDel.ok;
+                                revertDetalle = `Camión ${payloadObj.placa} eliminado de la cola.`;
+                                
+                                // Pop local from FIFO Queue
+                                const updatedDispatch = Store.getState().dispatch.data.filter(t => t.placa !== payloadObj.placa);
+                                Store.updateDispatch(updatedDispatch);
+                            }
+                        } else if (tipo.includes("INGRESAR") || tipo.includes("YARD")) {
+                            const containerId = payloadObj.codigoId || payloadObj.codigoID;
+                            if (containerId) {
+                                const resDel = await YardService.retirarContenedor(containerId);
+                                revertExito = resDel.ok;
+                                revertDetalle = `Contenedor ${containerId} retirado del patio.`;
+                                
+                                // Pop local from Yard Double LinkedList
+                                const updatedYard = Store.getState().yard.data.filter(c => (c.codigoId !== containerId && c.codigoID !== containerId));
+                                Store.updateYard(updatedYard);
+                            }
+                        } else {
+                            revertExito = true;
+                        }
+                    } catch (e) {
+                        console.error("Fallo al revertir a nivel de negocio V2:", e);
                     }
-                    if (res.ok) {
-                        const log = await res.json();
-                        await this.reloadData();
-                        showToast("success", "Acción Revertida", `Tipo: ${log.tipoAccion}`);
+
+                    // Pop local from audit data (latest is removed)
+                    const updatedAudit = [...Store.getState().audit.data];
+                    updatedAudit.shift();
+                    Store.updateAudit(updatedAudit);
+
+                    if (window.pilaAuditoria && window.pilaAuditoria.pop) {
+                        window.pilaAuditoria.pop();
+                    }
+
+                    // Sync in background
+                    await this.loadAudit();
+                    this.reloadData(true);
+
+                    if (revertExito) {
+                        showToast("success", "Acción Revertida", "La transacción ha sido desapilada y consolidada con éxito.");
+                    } else {
+                        showToast("error", "Reversión Incompleta", "El log de auditoría fue removido, pero falló la actualización en el servicio secundario (cola/patio).");
                     }
                 } catch (error) {
-                    console.error("[DashboardController] Error Undo:", error);
-                    showToast("error", "Sin Conexión", "Error al revertir la acción.");
+                    if (error.status === 404) {
+                        showToast("warning", "Pila Vacía", error.message);
+                        await this.reloadData(true);
+                    } else {
+                        console.error("[DashboardController] Error Undo:", error);
+                        showToast("error", "Fallo de Reversión", error.message || "Error al revertir la acción.");
+                    }
                 } finally {
+                    window.isAuditLogLocked = false;
                     setLoadingState(newBtn, false);
                 }
             });
         }
     }
 };
+
+function shakeForm(formEl) {
+    if (!formEl) return;
+    formEl.classList.add("animate__animated", "animate__shakeX");
+    formEl.addEventListener("animationend", () => {
+        formEl.classList.remove("animate__animated", "animate__shakeX");
+    }, { once: true });
+}
 
 if (typeof window !== 'undefined') {
     window.DashboardController = DashboardController;

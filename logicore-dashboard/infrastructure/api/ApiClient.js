@@ -27,7 +27,7 @@ const ApiClient = {
     config: {
         yardBaseUrl: "http://127.0.0.1:8081/api/v1/yard/containers",
         dispatchBaseUrl: "http://127.0.0.1:8082/api/v1/dispatch/trucks",
-        auditBaseUrl: "http://127.0.0.1:8083/api/v1/audit/logs"
+        auditBaseUrl: "http://127.0.0.1:8083/api/v1/audit"
     },
 
     /**
@@ -83,7 +83,7 @@ const ApiClient = {
         // Intercept and validate the payload against AuditLogRequestDTO
         _validateDTO("AuditLogRequestDTO", auditData);
 
-        const response = await fetch(this.config.auditBaseUrl, {
+        const response = await fetch(`${this.config.auditBaseUrl}/logs`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -103,7 +103,8 @@ const ApiClient = {
      * Send an undo request to the Audit Service.
      */
     async postUndo() {
-        const response = await fetch(`${this.config.auditBaseUrl}/undo`, {
+        // Se corrige el path para alinearlo con /api/v1/audit/logs/undo
+        const response = await fetch(`${this.config.auditBaseUrl}/logs/undo`, { 
             method: "POST"
         });
         return response;
@@ -135,7 +136,7 @@ const ApiClient = {
      * Get audit logs from Audit Service.
      */
     async getAuditLogs() {
-        const response = await fetch(this.config.auditBaseUrl);
+        const response = await fetch(`${this.config.auditBaseUrl}/logs`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -147,6 +148,26 @@ const ApiClient = {
      */
     async deleteNextTruck() {
         const response = await fetch(`${this.config.dispatchBaseUrl}/next`, {
+            method: "DELETE"
+        });
+        return response;
+    },
+
+    /**
+     * Delete a specific container from Yard Service.
+     */
+    async deleteContainer(codigoId) {
+        const response = await fetch(`${this.config.yardBaseUrl}/${codigoId}`, {
+            method: "DELETE"
+        });
+        return response;
+    },
+
+    /**
+     * Delete a specific truck from Dispatch Service.
+     */
+    async deleteTruck(placa) {
+        const response = await fetch(`${this.config.dispatchBaseUrl}/${placa}`, {
             method: "DELETE"
         });
         return response;
