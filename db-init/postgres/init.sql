@@ -1,5 +1,5 @@
 -- =========================================================================
--- 🐘  POSTGRESQL INITIALIZATION SCRIPT  —  LOGICORE
+-- POSTGRESQL INITIALIZATION SCRIPT  -  LOGICORE
 -- =========================================================================
 
 -- The database 'yard_management' is automatically created by the POSTGRES_DB environment variable.

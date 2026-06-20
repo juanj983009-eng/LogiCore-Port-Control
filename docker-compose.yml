@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # =========================================================================
-  # 🐘  DATABASE: POSTGRESQL (YARD & AUDIT LOGS)
+  # DATABASE: POSTGRESQL (YARD & AUDIT LOGS)
   # =========================================================================
   yard-db:
     image: postgres:16-alpine
@@ -30,7 +30,7 @@ services:
           memory: 256M
 
   # =========================================================================
-  # 💾  DATABASE: MS SQL SERVER (DISPATCH COLA FIFO)
+  # DATABASE: MS SQL SERVER (DISPATCH COLA FIFO)
   # =========================================================================
   dispatch-db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -58,7 +58,7 @@ services:
           memory: 1536M
 
   # =========================================================================
-  # 🛠️  DATABASE RUNTIME SETUP: SQL SERVER SIDE-CAR DATABASE INITIATION
+  # DATABASE RUNTIME SETUP: SQL SERVER SIDE-CAR DATABASE INITIATION
   # =========================================================================
   sqlserver-init:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -74,7 +74,7 @@ services:
       - logicore-net
 
   # =========================================================================
-  # 📝  MICROSERVICE: AUDIT HISTORY (PUERTO 8083)
+  # MICROSERVICE: AUDIT HISTORY (PUERTO 8083)
   # =========================================================================
   audit-service:
     container_name: audit-history-service
@@ -99,7 +99,7 @@ services:
           memory: 256M
 
   # =========================================================================
-  # 🏗️  MICROSERVICE: INBOUND YARD (PUERTO 8081)
+  # MICROSERVICE: INBOUND YARD (PUERTO 8081)
   # =========================================================================
   yard-service:
     container_name: inbound-yard-service
@@ -125,7 +125,7 @@ services:
           memory: 256M
 
   # =========================================================================
-  # 🚚  MICROSERVICE: DISPATCH QUEUE (PUERTO 8082)
+  # MICROSERVICE: DISPATCH QUEUE (PUERTO 8082)
   # =========================================================================
   dispatch-service:
     container_name: dispatch-queue-service
@@ -154,7 +154,7 @@ services:
           memory: 384M
 
 # =========================================================================
-# 🌐  NETWORKS & PERSISTENCE VOLUMES
+# NETWORKS & PERSISTENCE VOLUMES
 # =========================================================================
 networks:
   logicore-net:

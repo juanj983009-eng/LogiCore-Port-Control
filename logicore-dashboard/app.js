@@ -1,9 +1,9 @@
 // =========================================================================
-// 🌐  LOGICORE · app.js  —  Senior Lead Developer Edition v2
+// LOGICORE - app.js - Senior Lead Developer Edition v2
 //     + Mapa de Calor del Patio (Heatmap Grid)
-//     + Gráfico de Saturación (Chart.js — Barras horizontales)
+//     + Grafico de Saturacion (Chart.js - Barras horizontales)
 //     + Feed de Alertas en Tiempo Real (HAZMAT / P1)
-//     Toda la lógica de negocio previa se mantiene intacta.
+//     Toda la logica de negocio previa se mantiene intacta.
 // =========================================================================
 
 window.LOGICORE_CONFIG = { USE_V2_ARCHITECTURE: true, API_BASE_URL: 'http://127.0.0.1:8080' };
@@ -61,7 +61,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 // =========================================================================
-// 🚀  INICIALIZACIÓN
+// INICIALIZACION
 // =========================================================================
 (async () => {
 
@@ -160,7 +160,7 @@ document.addEventListener("keydown", (e) => {
 })();
 
 // =========================================================================
-// 💧  RIPPLE EFFECT
+// RIPPLE EFFECT
 // =========================================================================
 function createRipple(e) {
     const btn      = e.currentTarget;
@@ -179,7 +179,7 @@ function createRipple(e) {
 }
 
 // =========================================================================
-// 🔔  SISTEMA DE TOASTS
+// SISTEMA DE TOASTS
 // =========================================================================
 function showToast(type = "info", title = "", message = "", duration = 4000) {
     const container = document.getElementById("toast-container");
@@ -221,7 +221,7 @@ function escHtml(str) {
 }
 
 // =========================================================================
-// 📊  KPIs — Contadores animados
+// KPIs - Contadores animados
 // =========================================================================
 function actualizarKPIs() {
     const yardCount     = state.yard.data.length;
@@ -257,7 +257,7 @@ function animateCounter(elementId, target) {
 }
 
 // =========================================================================
-// 🏗️  SECCIÓN 1 — PATIO DE CONTENEDORES (Lista Doble · Puerto 8082)
+// SECCION 1 - PATIO DE CONTENEDORES (Lista Doble - Puerto 8082)
 // =========================================================================
 
 async function ingresarAlPatio(e) {
@@ -395,7 +395,7 @@ function renderizarPatio() {
 }
 
 // =========================================================================
-// 🔥  MAPA DE CALOR DEL PATIO (Heatmap)
+// MAPA DE CALOR DEL PATIO (Heatmap)
 // =========================================================================
 
 /**
@@ -420,7 +420,7 @@ function renderizarHeatmap() {
 }
 
 // =========================================================================
-// 🚚  SECCIÓN 2 — COLA DE DESPACHO (FIFO · Puerto 8082)
+// SECCION 2 - COLA DE DESPACHO (FIFO - Puerto 8082)
 // =========================================================================
 
 async function encolarCamion(e) {
@@ -492,7 +492,7 @@ async function encolarCamion(e) {
             cargarColaDespacho(true);
             cargarHistorialAuditoria(true);
 
-            // 🚨 Registrar alerta si es HAZMAT o P1
+            // Registrar alerta si es HAZMAT o P1
             if (camionDTO.tipoCarga === "HAZMAT" || camionDTO.ordenPrioridad === 1) {
                 registrarAlerta("ENCOLADO", camionDTO);
             }
@@ -555,7 +555,7 @@ async function despacharSiguienteCamion() {
         cargarColaDespacho(true);
         cargarHistorialAuditoria(true);
 
-        // 🚨 Alerta si el camión despachado era HAZMAT o P1
+        // Alerta si el camion despachado era HAZMAT o P1
         if ((camionAtendido.tipoCarga || "").toUpperCase() === "HAZMAT" ||
             camionAtendido.ordenPrioridad === 1) {
             registrarAlerta("DESPACHADO", camionAtendido);
@@ -662,7 +662,7 @@ function renderizarColaDespacho() {
 }
 
 // =========================================================================
-// 📊  GRÁFICO DE SATURACIÓN — Chart.js
+// GRAFICO DE SATURACION - Chart.js
 // =========================================================================
 
 /**
@@ -691,7 +691,7 @@ function inicializarGrafico() {
     dispatchChart = new Chart(ctx, {
         type: "bar",
         data: {
-            labels: ["REEFER ❄️", "DRY 📦", "HAZMAT ☢️"],
+            labels: ["REEFER", "DRY", "HAZMAT"],
             datasets: [{
                 label: "Camiones en Cola",
                 data:  [0, 0, 0],
@@ -786,7 +786,7 @@ function actualizarGrafico() {
 }
 
 // =========================================================================
-// 🚨  FEED DE ALERTAS EN TIEMPO REAL (HAZMAT / P1)
+// FEED DE ALERTAS EN TIEMPO REAL (HAZMAT / P1)
 // =========================================================================
 
 /**
@@ -802,8 +802,8 @@ function registrarAlerta(evento, camion) {
 
     // Clasificar razón de la alerta
     const razones = [];
-    if (tipo === "HAZMAT")   razones.push("☢️ HAZMAT");
-    if (prio === 1)          razones.push("🔴 Prioridad P1");
+    if (tipo === "HAZMAT")   razones.push("HAZMAT");
+    if (prio === 1)          razones.push("Prioridad P1");
 
     if (razones.length === 0) return;  // No es crítico
 
@@ -1198,7 +1198,7 @@ async function deshacerUltimaAccion() {
 }
 
 // =========================================================================
-// 🔢  PAGINACIÓN REACTIVA
+// PAGINACION REACTIVA
 // =========================================================================
 function actualizarPaginacion(section, currentPage, totalPages, from, to) {
     const prefix = section === "dispatch" ? "dispatch" : "audit";
@@ -1250,7 +1250,7 @@ function actualizarPaginacion(section, currentPage, totalPages, from, to) {
 }
 
 // =========================================================================
-// 🎨  HELPERS DE BADGES Y CLASES
+// HELPERS DE BADGES Y CLASES
 // =========================================================================
 function getCargoClass(tipoCarga = "") {
     switch (tipoCarga.toUpperCase()) {
@@ -1263,10 +1263,10 @@ function getCargoClass(tipoCarga = "") {
 
 function getCargoIcon(tipoCarga = "") {
     switch (tipoCarga.toUpperCase()) {
-        case "REEFER": return "❄️";
-        case "HAZMAT": return "☢️";
+        case "REEFER": return "REF";
+        case "HAZMAT": return "HZ";
         case "DRY":
-        default:       return "📦";
+        default:       return "STD";
     }
 }
 
@@ -1307,7 +1307,7 @@ function getAuditEntryClass(tipoAccion = "") {
 }
 
 // =========================================================================
-// ⚙️  UTILIDADES DE UI
+// UTILIDADES DE UI
 // =========================================================================
 function setLoadingState(btn, loading) {
     if (!btn) return;

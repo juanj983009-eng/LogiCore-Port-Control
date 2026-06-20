@@ -133,7 +133,7 @@ const YardHeatmap = {
 
             // 3. Reconcile tooltips
             if (isOcupad) {
-                const tooltipText = `ID: ${c.codigoId}\n📍 Destino: ${c.destino}\n⚖️ Peso: ${(+c.peso).toFixed(1)} Tn\n⚡ Prioridad: ${c.prioridad}`;
+                const tooltipText = `ID: ${c.codigoId}\nDestino: ${c.destino}\nPeso: ${(+c.peso).toFixed(1)} Tn\nPrioridad: ${c.prioridad}`;
                 if (slot.getAttribute("data-tooltip") !== tooltipText) {
                     slot.setAttribute("data-tooltip", tooltipText);
                     slot.classList.add("has-tooltip");
